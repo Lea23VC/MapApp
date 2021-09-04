@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import MapView, {Marker, Callout, Geojson} from 'react-native-maps';
 import Geolocation from '@react-native-community/geolocation';
+import RNLocation from 'react-native-location';
 
 const myPlace = {
   type: 'FeatureCollection',
@@ -25,6 +26,42 @@ const myPlace = {
 };
 
 export default function App() {
+  const [viewLocation, isViewLocation] = useState([]);
+
+  const getLocation = async () => {
+    let permission = await RNLocation.checkPermission({
+      ios: 'whenInUse', // or 'always'
+      android: {
+        detail: 'coarse', // or 'fine'
+      },
+    });
+
+    console.log(permission, '  ee');
+
+    let location;
+    if (!permission) {
+      permission = await RNLocation.requestPermission({
+        ios: 'whenInUse',
+        android: {
+          detail: 'coarse',
+          rationale: {
+            title: 'We need to access your location',
+            message: 'We use your location to show where you are on the map',
+            buttonPositive: 'OK',
+            buttonNegative: 'Cancel',
+          },
+        },
+      });
+      console.log(permission);
+      location = await RNLocation.getLatestLocation({timeout: 100});
+      console.log(location);
+      isViewLocation(location);
+    } else {
+      location = await RNLocation.getLatestLocation({timeout: 100});
+      console.log(location);
+      isViewLocation(location);
+    }
+  };
   const initalState = {
     latitude: 3.43343,
     longitude: 44.5,
@@ -34,11 +71,6 @@ export default function App() {
   const [currentPosition, setCurrentPosition] = useState(initalState);
 
   console.log(currentPosition, ' XD');
-  Geolocation.getCurrentPosition(info => console.log(info), {
-    enableHighAccuracy: false,
-    timeout: 2000,
-    maximumAge: 3600000,
-  });
 
   onMarkerDragEnd = evt => {
     // console.log(evt);
@@ -48,8 +80,6 @@ export default function App() {
     <View style={styles.container}>
       <StatusBar style="auto" />
       <MapView
-        followsUserLocation={true}
-        showsUserLocation={true}
         style={styles.map}
         // customMapStyle={MapStyle}
         initialRegion={{
@@ -79,18 +109,11 @@ export default function App() {
             description="This is where the magic happens!"></Marker>
         ))}
         <Callout />
-
-        <Marker
-          draggable={true}
-          pinColor="yellow"
-          coordinate={currentPosition}
-          title="XD"
-          description="This is where the magic happens!"></Marker>
       </MapView>
       <Text>Probando 1 2 3</Text>
 
       <Button
-        onPress={onMarkerDragEnd}
+        onPress={getLocation}
         title="Click"
         color="#841584"
         accessibilityLabel="Learn more about this purple button"
