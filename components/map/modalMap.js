@@ -16,9 +16,8 @@ import Geolocation from 'react-native-geolocation-service';
 import RNLocation from 'react-native-location';
 import * as Location from 'expo-location';
 
-import database from '@react-native-firebase/database';
-const newReference = database().ref('/Maps').push();
-console.log('Auto generated key: ', newReference.key);
+import firestore from '@react-native-firebase/firestore';
+
 export default function ModalMap(props) {
   const [text, onChangeText] = React.useState('Useless Text');
   const [number, onChangeNumber] = React.useState(null);
@@ -32,11 +31,16 @@ export default function ModalMap(props) {
     // console.log(props.modalMarkers);
     onChangeNumber(null);
 
-    newReference
-      .set({
-        map: {latlng: props.currentPosition, title: number},
+    firestore()
+      .collection('Maps')
+      .add({
+        latlng: props.currentPosition,
+        title: number,
+        createdAt: firestore.FieldValue.serverTimestamp(),
       })
-      .then(() => console.log('Data updated.'));
+      .then(() => {
+        console.log('Map added!');
+      });
     props.setModalVisible(!props.modalVisible);
   }
 

@@ -13,6 +13,7 @@
     "@react-native-community/geolocation": "^2.0.2",
     "@react-native-firebase/app": "^12.7.5",
     "@react-native-firebase/database": "^12.7.5",
+    "@react-native-firebase/firestore": "^12.7.5",
     "expo-location": "^12.1.2",
     "firebase": "^9.0.2",
     "react": "17.0.2",

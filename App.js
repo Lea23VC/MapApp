@@ -18,18 +18,58 @@ import * as Location from 'expo-location';
 
 import ModalMap from 'C:/Users/Leandro/Documents/Local Repo/MapApp/components/map/modalMap.js';
 
-import database from '@react-native-firebase/database';
+import firestore from '@react-native-firebase/firestore';
 
-database()
-  .ref('/Maps')
-  .child('map')
-  .once('value')
-  .then(data => {
-    let fetchedData = data.val();
-    console.log('Fetched Data', fetchedData);
-  })
-  .catch(error => {
-    console.log('Fetching Error', error);
+var b = [];
+var aux = 0;
+firestore()
+  .collection('Maps')
+  .orderBy('createdAt')
+  .onSnapshot(querySnapshot => {
+    var i = 0;
+    console.log('i: ', i);
+    // console.log(querySnapshot);
+    querySnapshot.forEach(snapshot => {
+      console.log('item: ', i);
+      let data = snapshot.data();
+      console.log('XD ', data);
+
+      if (i >= aux) {
+        aux = i;
+        b = [...b, data];
+      }
+      i++;
+    });
+
+    console.log('total: ', aux);
+  });
+
+// You want to get the list of documents in the student collection
+
+// firestore()
+//   .ref('/Maps')
+//   .child('map')
+//   .once('value')
+//   .then(data => {
+//     let fetchedData = data.val();
+//     console.log('Fetched Data', fetchedData);
+//   })
+//   .catch(error => {
+//     console.log('Fetching Error', error);
+//   });
+
+var a = [];
+firestore()
+  .collection('Maps')
+  .get()
+  .then(querySnapshot => {
+    querySnapshot.forEach(snapshot => {
+      let data = snapshot.data();
+      console.log(data);
+      a = [...a, data];
+    });
+
+    return querySnapshot;
   });
 
 const initialState = {
@@ -46,8 +86,10 @@ export default function App() {
   const [text, onChangeText] = React.useState('Useless Text');
   const [number, onChangeNumber] = React.useState(null);
   const [currentPosition, setCurrentPosition] = useState(initialState);
-  // console.log('a: ', currentPosition);
   const [coordenations, setCoordenations] = useState({lat: 0, long: 0});
+
+  //console.log(usersCollection);
+
   Geolocation.getCurrentPosition(
     position => {
       const {longitude, latitude} = position.coords;
@@ -65,7 +107,18 @@ export default function App() {
       enableHighAccuracy: true,
     },
   );
+  // firestore()
+  //   .collection('Maps')
+  //   .(querySnapshot => {
+  //     querySnapshot.forEach(snapshot => {
+  //       console.log('test0: ', markers);
+  //       setMarkers([...markers, snapshot._data]);
+  //       console.log('test: ', snapshot._data);
 
+  //       // let data = snapshot.data();
+  //       // console.log('XD ', data);
+  //     });
+  //   });
   // add your code for get and update makers every second
 
   return currentPosition.latitude ? (
@@ -89,7 +142,8 @@ export default function App() {
         followsUserLocation
         style={styles.map}
         // customMapStyle={MapStyle}
-        region={currentPosition}>
+        // region={currentPosition}>
+        initialRegion={currentPosition}>
         {[
           {
             coordinate: {latitude: -33, longitude: 70},
@@ -111,7 +165,7 @@ export default function App() {
             description="This is where the magic happens!"></Marker>
         ))}
 
-        {markers.map((marker, i) => (
+        {b.map((marker, i) => (
           <Marker
             key={i}
             coordinate={marker.latlng}
