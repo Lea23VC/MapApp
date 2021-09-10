@@ -1,4 +1,4 @@
-import React, {Component, useState, setState} from 'react';
+import React, {Component, useState, setState, useEffect} from 'react';
 import {
   StyleSheet,
   Text,
@@ -6,88 +6,90 @@ import {
   Button,
   View,
   StatusBar,
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  TextInput,
 } from 'react-native';
 import MapView, {Marker, Callout, Geojson} from 'react-native-maps';
-import Geolocation from '@react-native-community/geolocation';
+import Geolocation from 'react-native-geolocation-service';
 import RNLocation from 'react-native-location';
+import * as Location from 'expo-location';
 
-const myPlace = {
-  type: 'FeatureCollection',
-  features: [
-    {
-      type: 'Feature',
-      properties: {},
-      geometry: {
-        type: 'Point',
-        coordinates: [33.7872131, 48.844287],
-      },
-    },
-  ],
+import ModalMap from 'C:/Users/Leandro/Documents/Local Repo/MapApp/components/map/modalMap.js';
+
+import database from '@react-native-firebase/database';
+
+database()
+  .ref('/Maps')
+  .child('map')
+  .once('value')
+  .then(data => {
+    let fetchedData = data.val();
+    console.log('Fetched Data', fetchedData);
+  })
+  .catch(error => {
+    console.log('Fetching Error', error);
+  });
+
+const initialState = {
+  latitude: null,
+  longitude: null,
+  latitudeDelta: 0.000922,
+  longitudeDelta: 0.000421,
 };
 
 export default function App() {
-  const [viewLocation, isViewLocation] = useState([]);
-
-  const getLocation = async () => {
-    let permission = await RNLocation.checkPermission({
-      ios: 'whenInUse', // or 'always'
-      android: {
-        detail: 'coarse', // or 'fine'
-      },
-    });
-
-    console.log(permission, '  ee');
-
-    let location;
-    if (!permission) {
-      permission = await RNLocation.requestPermission({
-        ios: 'whenInUse',
-        android: {
-          detail: 'coarse',
-          rationale: {
-            title: 'We need to access your location',
-            message: 'We use your location to show where you are on the map',
-            buttonPositive: 'OK',
-            buttonNegative: 'Cancel',
-          },
-        },
+  const [modalVisible, setModalVisible] = useState(false);
+  const [markers, setMarkers] = useState([]);
+  const [modalMarkers, setModalMarkers] = useState(null);
+  const [text, onChangeText] = React.useState('Useless Text');
+  const [number, onChangeNumber] = React.useState(null);
+  const [currentPosition, setCurrentPosition] = useState(initialState);
+  // console.log('a: ', currentPosition);
+  const [coordenations, setCoordenations] = useState({lat: 0, long: 0});
+  Geolocation.getCurrentPosition(
+    position => {
+      const {longitude, latitude} = position.coords;
+      setCurrentPosition({
+        ...currentPosition,
+        latitude,
+        longitude,
       });
-      console.log(permission);
-      location = await RNLocation.getLatestLocation({timeout: 100});
-      console.log(location);
-      isViewLocation(location);
-    } else {
-      location = await RNLocation.getLatestLocation({timeout: 100});
-      console.log(location);
-      isViewLocation(location);
-    }
-  };
-  const initalState = {
-    latitude: 3.43343,
-    longitude: 44.5,
-    latitudeDelta: 0.0922,
-    longitudeDelta: 0.0421,
-  };
-  const [currentPosition, setCurrentPosition] = useState(initalState);
+    },
 
-  console.log(currentPosition, ' XD');
+    error => alert(error.message),
+    {
+      timeout: 20000,
+      maximumAge: 5000,
+      enableHighAccuracy: true,
+    },
+  );
 
-  onMarkerDragEnd = evt => {
-    // console.log(evt);
-  };
+  // add your code for get and update makers every second
 
-  return (
+  return currentPosition.latitude ? (
     <View style={styles.container}>
       <StatusBar style="auto" />
+
+      <ModalMap
+        modalVisible={modalVisible}
+        setModalVisible={setModalVisible}
+        setModalMarkers={setModalMarkers}
+        currentPosition={currentPosition}
+        modalMarkers={modalMarkers}
+        setMarkers={setMarkers}
+        markers={markers}
+      />
       <MapView
+        onPress={e =>
+          setMarkers([...markers, {latlng: e.nativeEvent.coordinate}])
+        }
+        showsUserLocation
+        followsUserLocation
         style={styles.map}
         // customMapStyle={MapStyle}
-        initialRegion={{
-          latitude: -33.48570804015753,
-          longitude: -70.63525836493673,
-          latitudeDelta: 0.0,
-          longitudeDelta: 0.0,
-        }}>
+        region={currentPosition}>
         {[
           {
             coordinate: {latitude: -33, longitude: 70},
@@ -108,17 +110,54 @@ export default function App() {
             title={map.title}
             description="This is where the magic happens!"></Marker>
         ))}
-        <Callout />
+
+        {markers.map((marker, i) => (
+          <Marker
+            key={i}
+            coordinate={marker.latlng}
+            title={marker.title ? marker.title : 'placeholder'}
+          />
+        ))}
+
+        {/* {modalMarkers ? (
+          <Marker
+            pinColor="blue"
+            title={'test'}
+            coordinate={{
+              latitude: modalMarkers.latitude,
+              longitude: modalMarkers.longitude,
+            }}></Marker>
+        ) : null} */}
+        <Marker
+          draggable={true}
+          pinColor="yellow"
+          coordinate={currentPosition}
+          title={'XD'}
+          description="This is where the magic happens!"></Marker>
       </MapView>
       <Text>Probando 1 2 3</Text>
 
+      <Text>
+        {currentPosition.latitude !== 0
+          ? `Latitud: ${currentPosition.latitude}`
+          : 'Latitud: ...'}
+      </Text>
+
+      <Text>
+        {currentPosition.longitude !== 0
+          ? `Longitud: ${currentPosition.longitude}`
+          : 'Longitud: ...'}
+      </Text>
+
       <Button
-        onPress={getLocation}
-        title="Click"
+        onPress={() => setModalVisible(true)}
+        title="Agregar sitio"
         color="#841584"
         accessibilityLabel="Learn more about this purple button"
       />
     </View>
+  ) : (
+    <ActivityIndicator style={{flex: 1}} />
   );
 }
 const styles = StyleSheet.create({
@@ -134,5 +173,47 @@ const styles = StyleSheet.create({
     width: Dimensions.get('window').width,
     height: Dimensions.get('window').height,
     marginTop: -200,
+  },
+
+  centeredView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 22,
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 35,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  button: {
+    borderRadius: 20,
+    padding: 10,
+    elevation: 2,
+  },
+  buttonOpen: {
+    backgroundColor: '#F194FF',
+  },
+  buttonClose: {
+    backgroundColor: '#2196F3',
+  },
+  textStyle: {
+    color: 'white',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  modalText: {
+    marginBottom: 15,
+    textAlign: 'center',
   },
 });
