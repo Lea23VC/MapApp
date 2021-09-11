@@ -10,11 +10,10 @@ import {
   Modal,
   Pressable,
   TextInput,
+  PermissionsAndroid,
 } from 'react-native';
 import MapView, {Marker, Callout, Geojson} from 'react-native-maps';
 import Geolocation from 'react-native-geolocation-service';
-import RNLocation from 'react-native-location';
-import * as Location from 'expo-location';
 
 import ModalMap from 'C:/Users/Leandro/Documents/Local Repo/MapApp/components/map/modalMap.js';
 
@@ -28,17 +27,18 @@ firestore()
   .onSnapshot(querySnapshot => {
     var i = 0;
     console.log('i: ', i);
-    // console.log(querySnapshot);
+    console.log(querySnapshot.docs);
+    b = querySnapshot.docs.map(doc => doc.data());
+    console.log('B: ', b);
     querySnapshot.forEach(snapshot => {
-      console.log('item: ', i);
-      let data = snapshot.data();
-      console.log('XD ', data);
-
-      if (i >= aux) {
-        aux = i;
-        b = [...b, data];
-      }
-      i++;
+      // console.log('item: ', i);
+      // let data = snapshot.data();
+      // console.log('XD ', data);
+      // if (i >= aux) {
+      //   aux = i;
+      //   b.push(data);
+      // }
+      // i++;
     });
 
     console.log('total: ', aux);
@@ -58,19 +58,19 @@ firestore()
 //     console.log('Fetching Error', error);
 //   });
 
-var a = [];
-firestore()
-  .collection('Maps')
-  .get()
-  .then(querySnapshot => {
-    querySnapshot.forEach(snapshot => {
-      let data = snapshot.data();
-      console.log(data);
-      a = [...a, data];
-    });
+// var a = [];
+// firestore()
+//   .collection('Maps')
+//   .get()
+//   .then(querySnapshot => {
+//     querySnapshot.forEach(snapshot => {
+//       let data = snapshot.data();
+//       console.log(data);
+//       a = [...a, data];
+//     });
 
-    return querySnapshot;
-  });
+//     return querySnapshot;
+//   });
 
 const initialState = {
   latitude: null,
@@ -80,13 +80,22 @@ const initialState = {
 };
 
 export default function App() {
+  const permission = () => {
+    PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
+      PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+      PermissionsAndroid.PERMISSIONS.FOREGROUND_SERVICE,
+      PermissionsAndroid.PERMISSIONS.ACCESS_BACKGROUND_LOCATION,
+    );
+  };
+  useEffect(() => {
+    permission();
+  }, []);
   const [modalVisible, setModalVisible] = useState(false);
   const [markers, setMarkers] = useState([]);
   const [modalMarkers, setModalMarkers] = useState(null);
-  const [text, onChangeText] = React.useState('Useless Text');
-  const [number, onChangeNumber] = React.useState(null);
+
   const [currentPosition, setCurrentPosition] = useState(initialState);
-  const [coordenations, setCoordenations] = useState({lat: 0, long: 0});
 
   //console.log(usersCollection);
 
