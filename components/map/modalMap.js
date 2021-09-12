@@ -1,20 +1,12 @@
-import React, {Component, useState, setState, useEffect} from 'react';
+import React, {useState} from 'react';
 import {
   StyleSheet,
   Text,
-  Dimensions,
-  Button,
   View,
-  StatusBar,
-  ActivityIndicator,
   Modal,
   Pressable,
   TextInput,
 } from 'react-native';
-import MapView, {Marker, Callout, Geojson} from 'react-native-maps';
-import Geolocation from 'react-native-geolocation-service';
-import RNLocation from 'react-native-location';
-import * as Location from 'expo-location';
 
 import firestore from '@react-native-firebase/firestore';
 
@@ -74,20 +66,6 @@ export default function ModalMap(props) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    paddingTop: 50,
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  map: {
-    width: Dimensions.get('window').width,
-    height: Dimensions.get('window').height,
-    marginTop: -200,
-  },
-
   centeredView: {
     flex: 1,
     justifyContent: 'center',
@@ -114,19 +92,13 @@ const styles = StyleSheet.create({
     padding: 10,
     elevation: 2,
   },
-  buttonOpen: {
-    backgroundColor: '#F194FF',
-  },
+
   buttonClose: {
     backgroundColor: '#2196F3',
   },
   textStyle: {
     color: 'white',
     fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  modalText: {
-    marginBottom: 15,
     textAlign: 'center',
   },
 });

@@ -1,4 +1,8 @@
 import React, {Component, useState, setState, useEffect} from 'react';
+
+import MapView, {Marker, Callout, Geojson} from 'react-native-maps';
+
+import ModalMap from './modalMap.js';
 import {
   StyleSheet,
   Text,
@@ -10,21 +14,16 @@ import {
   Pressable,
   TextInput,
   PermissionsAndroid,
+  ActivityIndicator,
 } from 'react-native';
-import Geolocation from 'react-native-geolocation-service';
-
-import ModalMap from './components/map/modalMap.js';
-import MapView from './components/map/mapView.js';
 import firestore from '@react-native-firebase/firestore';
-
+import Geolocation from 'react-native-geolocation-service';
 var b = [];
 var aux = 0;
 firestore()
   .collection('Maps')
   .orderBy('createdAt')
   .onSnapshot(querySnapshot => {
-    var i = 0;
-    console.log('i: ', i);
     console.log(querySnapshot.docs);
     b = querySnapshot.docs.map(doc => doc.data());
     console.log('B: ', b);
@@ -38,8 +37,6 @@ firestore()
       // }
       // i++;
     });
-
-    console.log('total: ', aux);
   });
 
 // You want to get the list of documents in the student collection
@@ -77,42 +74,37 @@ const initialState = {
   longitudeDelta: 0.000421,
 };
 
-export default function App() {
-  const permission = () => {
-    PermissionsAndroid.request(
-      PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
-      PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-      PermissionsAndroid.PERMISSIONS.FOREGROUND_SERVICE,
-      PermissionsAndroid.PERMISSIONS.ACCESS_BACKGROUND_LOCATION,
-    );
-  };
-  useEffect(() => {
-    permission();
-  }, []);
+export default function mapView() {
   const [modalVisible, setModalVisible] = useState(false);
+
   const [markers, setMarkers] = useState([]);
   const [modalMarkers, setModalMarkers] = useState(null);
 
-  // firestore()
-  //   .collection('Maps')
-  //   .(querySnapshot => {
-  //     querySnapshot.forEach(snapshot => {
-  //       console.log('test0: ', markers);
-  //       setMarkers([...markers, snapshot._data]);
-  //       console.log('test: ', snapshot._data);
+  const [currentPosition, setCurrentPosition] = useState(initialState);
 
-  //       // let data = snapshot.data();
-  //       // console.log('XD ', data);
-  //     });
-  //   });
-  // add your code for get and update makers every second
+  //console.log(usersCollection);
 
-  return (
+  Geolocation.getCurrentPosition(
+    position => {
+      const {longitude, latitude} = position.coords;
+      setCurrentPosition({
+        ...currentPosition,
+        latitude,
+        longitude,
+      });
+    },
+
+    error => alert(error.message),
+    {
+      timeout: 20000,
+      maximumAge: 5000,
+      enableHighAccuracy: true,
+    },
+  );
+
+  return currentPosition.latitude ? (
     <View style={styles.container}>
-      <StatusBar style="auto" />
-      <MapView />
-
-      {/* <ModalMap
+      <ModalMap
         modalVisible={modalVisible}
         setModalVisible={setModalVisible}
         setModalMarkers={setModalMarkers}
@@ -159,14 +151,47 @@ export default function App() {
             title={marker.title ? marker.title : 'placeholder'}
           />
         ))}
+
+        {/* {modalMarkers ? (
+          <Marker
+            pinColor="blue"
+            title={'test'}
+            coordinate={{
+              latitude: modalMarkers.latitude,
+              longitude: modalMarkers.longitude,
+            }}></Marker>
+        ) : null} */}
         <Marker
           draggable={true}
           pinColor="yellow"
           coordinate={currentPosition}
           title={'XD'}
           description="This is where the magic happens!"></Marker>
-      </MapView> */}
+      </MapView>
+
+      <Text>Probando 1 2 3</Text>
+
+      <Text>
+        {currentPosition.latitude !== 0
+          ? `Latitud: ${currentPosition.latitude}`
+          : 'Latitud: ...'}
+      </Text>
+
+      <Text>
+        {currentPosition.longitude !== 0
+          ? `Longitud: ${currentPosition.longitude}`
+          : 'Longitud: ...'}
+      </Text>
+
+      <Button
+        onPress={() => setModalVisible(true)}
+        title="Agregar sitio"
+        color="#841584"
+        accessibilityLabel="Learn more about this purple button"
+      />
     </View>
+  ) : (
+    <ActivityIndicator style={{flex: 1}} />
   );
 }
 const styles = StyleSheet.create({
