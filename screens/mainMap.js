@@ -1,31 +1,30 @@
 import React, {Component, useState, setState, useEffect} from 'react';
-
-import MapView, {Marker, Callout, Geojson} from 'react-native-maps';
-
-import ModalMap from './modalMap.js';
-
-import mapStyle from 'C:/Users/leand/Documents/Local Repo/MapApp/style/mapStyle.js';
-
 import {
   StyleSheet,
   Text,
   Dimensions,
+  Button,
   View,
   StatusBar,
   Modal,
   Pressable,
   TextInput,
   PermissionsAndroid,
-  ActivityIndicator,
 } from 'react-native';
-import firestore from '@react-native-firebase/firestore';
 import Geolocation from 'react-native-geolocation-service';
+
+import ModalMap from '../components/map/modalMap.js';
+import MapView from '../components/map/mapView.js';
+import firestore from '@react-native-firebase/firestore';
+
 var b = [];
 var aux = 0;
 firestore()
   .collection('Maps')
   .orderBy('createdAt')
   .onSnapshot(querySnapshot => {
+    var i = 0;
+    console.log('i: ', i);
     console.log(querySnapshot.docs);
     b = querySnapshot.docs.map(doc => doc.data());
     console.log('B: ', b);
@@ -39,6 +38,8 @@ firestore()
       // }
       // i++;
     });
+
+    console.log('total: ', aux);
   });
 
 // You want to get the list of documents in the student collection
@@ -76,42 +77,46 @@ const initialState = {
   longitudeDelta: 0.000421,
 };
 
-export default function mapView() {
-  console.log('map style: ', mapStyle);
+export default function App() {
+  const permission = () => {
+    PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
+      PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+      PermissionsAndroid.PERMISSIONS.FOREGROUND_SERVICE,
+      PermissionsAndroid.PERMISSIONS.ACCESS_BACKGROUND_LOCATION,
+    );
+  };
+  useEffect(() => {
+    permission();
+  }, []);
   const [modalVisible, setModalVisible] = useState(false);
-
   const [markers, setMarkers] = useState([]);
   const [modalMarkers, setModalMarkers] = useState(null);
 
-  const [currentPosition, setCurrentPosition] = useState(initialState);
+  // firestore()
+  //   .collection('Maps')
+  //   .(querySnapshot => {
+  //     querySnapshot.forEach(snapshot => {
+  //       console.log('test0: ', markers);
+  //       setMarkers([...markers, snapshot._data]);
+  //       console.log('test: ', snapshot._data);
 
-  //console.log(usersCollection);
+  //       // let data = snapshot.data();
+  //       // console.log('XD ', data);
+  //     });
+  //   });
+  // add your code for get and update makers every second
 
-  Geolocation.getCurrentPosition(
-    position => {
-      const {longitude, latitude} = position.coords;
-      setCurrentPosition({
-        ...currentPosition,
-        latitude,
-        longitude,
-      });
-    },
-
-    error => alert(error.message),
-    {
-      timeout: 20000,
-      maximumAge: 5000,
-      enableHighAccuracy: true,
-    },
-  );
-
-  return currentPosition.latitude ? (
+  return (
     <View style={styles.container}>
-      <ModalMap
-        customMapStyle={mapStyle}
+      <StatusBar style="auto" />
+      <MapView />
+
+      {/* <ModalMap
         modalVisible={modalVisible}
         setModalVisible={setModalVisible}
         setModalMarkers={setModalMarkers}
+        currentPosition={currentPosition}
         modalMarkers={modalMarkers}
         setMarkers={setMarkers}
         markers={markers}
@@ -154,78 +159,69 @@ export default function mapView() {
             title={marker.title ? marker.title : 'placeholder'}
           />
         ))}
-
-        {/* {modalMarkers ? (
-          <Marker
-            pinColor="blue"
-            title={'test'}
-            coordinate={{
-              latitude: modalMarkers.latitude,
-              longitude: modalMarkers.longitude,
-            }}></Marker>
-        ) : null} */}
         <Marker
           draggable={true}
           pinColor="yellow"
           coordinate={currentPosition}
           title={'XD'}
           description="This is where the magic happens!"></Marker>
-      </MapView>
-
-      <View style={styles.viewButtons}>
-        <Text>Probando 1 2 3</Text>
-
-        <Text>
-          {currentPosition.latitude !== 0
-            ? `Latitud: ${currentPosition.latitude}`
-            : 'Latitud: ...'}
-        </Text>
-
-        <Text>
-          {currentPosition.longitude !== 0
-            ? `Longitud: ${currentPosition.longitude}`
-            : 'Longitud: ...'}
-        </Text>
-
-        <Pressable
-          onPress={() => setModalVisible(true)}
-          title="Agregar sitio"
-          style={styles.button}
-          accessibilityLabel="Learn more about this purple button">
-          <Text style={styles.textStyle}>Agregar sitio</Text>
-        </Pressable>
-      </View>
+      </MapView> */}
     </View>
-  ) : (
-    <ActivityIndicator style={{flex: 1}} />
   );
 }
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
   map: {
     width: Dimensions.get('window').width,
     height: Dimensions.get('window').height,
+    marginTop: -200,
   },
 
+  centeredView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 22,
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 35,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
   button: {
     borderRadius: 20,
     padding: 10,
     elevation: 2,
-    backgroundColor: '#841584',
   },
-
+  buttonOpen: {
+    backgroundColor: '#F194FF',
+  },
+  buttonClose: {
+    backgroundColor: '#2196F3',
+  },
   textStyle: {
     color: 'white',
     fontWeight: 'bold',
     textAlign: 'center',
   },
-
-  viewButtons: {
-    borderRadius: 20,
-    width: '70%',
-    position: 'absolute',
-    alignSelf: 'center',
-    bottom: 50,
-    backgroundColor: 'white',
-    padding: 20,
+  modalText: {
+    marginBottom: 15,
+    textAlign: 'center',
   },
 });
