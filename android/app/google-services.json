@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "458270912502",
+    "project_id": "lea23-998",
+    "storage_bucket": "lea23-998.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:458270912502:android:a00cf1d2feb8eaa75ae1d7",
+        "android_client_info": {
+          "package_name": "com.mapapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "458270912502-ahog4q49eq1rt5he1lpter6p89fbj1av.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBCvtHhm7gF4jLVoNQtXuCWKL5-JrdtyUg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "458270912502-ahog4q49eq1rt5he1lpter6p89fbj1av.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

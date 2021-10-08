@@ -77,7 +77,6 @@ const initialState = {
 };
 
 export default function mapView() {
-  console.log('map style: ', mapStyle);
   const [modalVisible, setModalVisible] = useState(false);
 
   const [markers, setMarkers] = useState([]);
@@ -86,6 +85,12 @@ export default function mapView() {
   const [currentPosition, setCurrentPosition] = useState(initialState);
 
   //console.log(usersCollection);
+
+  useEffect(() => {
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   Geolocation.getCurrentPosition(
     position => {
@@ -115,6 +120,7 @@ export default function mapView() {
         modalMarkers={modalMarkers}
         setMarkers={setMarkers}
         markers={markers}
+        currentPosition={currentPosition}
       />
       <MapView
         onPress={e =>

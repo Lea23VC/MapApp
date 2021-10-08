@@ -88,6 +88,10 @@ export default function App() {
   };
   useEffect(() => {
     permission();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
   const [modalVisible, setModalVisible] = useState(false);
   const [markers, setMarkers] = useState([]);

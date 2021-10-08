@@ -2,6 +2,12 @@
   package="com.mapapp">
 
     <uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
+<!-- Optional permissions -->
+<uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
 
     <application
       android:name=".MainApplication"
@@ -9,7 +15,14 @@
       android:icon="@mipmap/ic_launcher"
       android:roundIcon="@mipmap/ic_launcher_round"
       android:allowBackup="false"
-      android:theme="@style/AppTheme">
+      android:theme="@style/AppTheme"
+      
+      >
+      <meta-data
+       android:name="com.google.android.geo.API_KEY"
+       android:value="AIzaSyDNf2SvzwMVpEGtZv_8lDuP08U4jdNUCGU"
+   />
+      
       <activity
         android:name=".MainActivity"
         android:label="@string/app_name"
@@ -21,5 +34,7 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
       </activity>
+
+      <uses-library android:name="org.apache.http.legacy" android:required="false"/>
     </application>
 </manifest>

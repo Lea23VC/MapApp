@@ -11,25 +11,18 @@ import {
 import firestore from '@react-native-firebase/firestore';
 
 export default function ModalMap(props) {
-  const [text, onChangeText] = React.useState('Useless Text');
-  const [number, onChangeNumber] = React.useState(null);
+  const [email, onChangeEmail] = React.useState(null);
+  const [password, onChangePassword] = React.useState(null);
+  const [userName, onChangeUserName] = React.useState(null);
+  const [birthDate, onChangeBirthDate] = React.useState(null);
 
   function addMarker() {
-    props.setMarkers([
-      ...props.markers,
-      {latlng: props.currentPosition, title: number},
-    ]);
-
     // console.log(props.modalMarkers);
-    console.log('modal console log: ', props.currentPosition);
-
-    onChangeNumber(null);
+    onChangeEmail(null);
 
     firestore()
-      .collection('Maps')
+      .collection('Users')
       .add({
-        latlng: props.currentPosition,
-        title: 'number',
         createdAt: firestore.FieldValue.serverTimestamp(),
       })
       .then(() => {
@@ -51,9 +44,21 @@ export default function ModalMap(props) {
         <View style={styles.modalView}>
           <TextInput
             style={styles.input}
-            onChangeText={onChangeNumber}
-            value={number}
-            placeholder="Ingrese titulo"
+            onChangeText={onChangeUserName}
+            value={userName}
+            placeholder="Ingrese nombre de usuario"
+          />
+          <TextInput
+            style={styles.input}
+            onChangeText={onChangeEmail}
+            value={email}
+            placeholder="Ingrese email"
+          />
+          <TextInput
+            style={styles.input}
+            onChangeText={onChangePassword}
+            value={password}
+            placeholder="Ingrese contraseña"
           />
 
           <Pressable

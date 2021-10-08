@@ -20,24 +20,25 @@
     "expo-location": "^12.1.2",
     "firebase": "^9.0.2",
     "react": "17.0.2",
-    "react-native": "0.66.0",
+    "react-native": "^0.66.0",
+    "react-native-date-picker": "^4.1.0",
     "react-native-eject": "^0.1.2",
     "react-native-geolocation-service": "^5.3.0-beta.2",
     "react-native-location": "^2.5.0",
-    "react-native-maps": "0.28.0",
+    "react-native-maps": "^0.27.1",
     "react-native-safe-area-context": "^3.3.2",
     "react-native-screens": "^3.8.0",
-    "react-native-unimodules": "^0.14.6"
+    "react-native-unimodules": "^0.14.8"
   },
   "devDependencies": {
     "@babel/core": "^7.12.9",
     "@babel/runtime": "^7.12.5",
     "@react-native-community/eslint-config": "^2.0.0",
-    "babel-jest": "^26.6.3",
-    "eslint": "7.14.0",
-    "jest": "^26.6.3",
+    "babel-jest": "^27.2.4",
+    "eslint": "^7.32.0",
+    "jest": "^27.2.4",
     "metro-react-native-babel-preset": "^0.66.0",
-    "react-native-codegen": "^0.0.7",
+    "react-native-codegen": "^0.0.0",
     "react-test-renderer": "17.0.2"
   },
   "jest": {
