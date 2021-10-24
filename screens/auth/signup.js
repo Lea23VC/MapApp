@@ -5,7 +5,8 @@ import {Checkbox, TextInput, Modal, Portal, Button} from 'react-native-paper';
 var dayjs = require('dayjs');
 import firestore from '@react-native-firebase/firestore';
 import DatePicker from 'react-native-date-picker';
-export default function ModalMap(props) {
+export default function ModalMap({route, navigation}) {
+  console.log('route: ', route.params);
   const [date, setDate] = useState(null);
   const [open, setOpen] = useState(false);
   const [firstName, onChangeFirstName] = React.useState(null);
@@ -18,7 +19,7 @@ export default function ModalMap(props) {
   const dateNow = new Date();
   const hideModal = () => props.setModalVisible(false);
   async function addMarker() {
-    const cred = await props
+    const cred = await route.params
       .auth()
       .createUserWithEmailAndPassword(email, password)
       .then(user => {
@@ -48,8 +49,6 @@ export default function ModalMap(props) {
         //   .then(() => {
         //     console.log('Map added!');
         //   });
-
-        props.setModalVisible(!props.modalVisible);
       })
       .catch(error => {
         if (error.code === 'auth/email-already-in-use') {
@@ -62,71 +61,59 @@ export default function ModalMap(props) {
 
         console.error(error);
       });
-
-    // console.log(props.modalMarkers);
-    // onChangeEmail(null);
+    navigation.goBack();
   }
 
   return (
-    <Portal>
-      <Modal
-        onDismiss={hideModal}
-        animationType="slide"
-        transparent={true}
-        visible={props.modalVisible}
-        onRequestClose={() => {
-          Alert.alert('Modal has been closed.');
-          props.setModalVisible(props.modalVisible);
-        }}>
-        <View>
-          <View style={styles.modalView}>
-            <View style={styles.viewText}>
-              <TextInput
-                mode="outlined"
-                onChangeText={onChangeFirstName}
-                value={firstName}
-                label="Ingrese nombre"
-              />
-            </View>
-            <View style={styles.viewText}>
-              <TextInput
-                mode="outlined"
-                onChangeText={onChangeLastName}
-                value={lastName}
-                label="Ingrese apellido(s)"
-              />
-            </View>
+    <View>
+      <View style={styles.modalView}>
+        <View style={styles.viewText}>
+          <TextInput
+            mode="outlined"
+            onChangeText={onChangeFirstName}
+            value={firstName}
+            label="Ingrese nombre"
+          />
+        </View>
+        <View style={styles.viewText}>
+          <TextInput
+            mode="outlined"
+            onChangeText={onChangeLastName}
+            value={lastName}
+            label="Ingrese apellido(s)"
+          />
+        </View>
 
-            <View style={styles.viewText}>
-              <TextInput
-                mode="outlined"
-                style={styles.input}
-                onChangeText={onChangeUserName}
-                value={username}
-                label="Ingrese nombre de usuario"
-              />
-            </View>
-            <View style={styles.viewText}>
-              <TextInput
-                mode="outlined"
-                style={styles.input}
-                onChangeText={onChangeEmail}
-                value={email}
-                label="Ingrese email"
-              />
-            </View>
-            <View style={styles.viewText}>
-              <TextInput
-                mode="outlined"
-                style={styles.input}
-                onChangeText={onChangePassword}
-                value={password}
-                secureTextEntry={true}
-                label="Ingrese contraseña"
-              />
-            </View>
+        <View style={styles.viewText}>
+          <TextInput
+            mode="outlined"
+            style={styles.input}
+            onChangeText={onChangeUserName}
+            value={username}
+            label="Ingrese nombre de usuario"
+          />
+        </View>
+        <View style={styles.viewText}>
+          <TextInput
+            mode="outlined"
+            style={styles.input}
+            onChangeText={onChangeEmail}
+            value={email}
+            label="Ingrese email"
+          />
+        </View>
+        <View style={styles.viewText}>
+          <TextInput
+            mode="outlined"
+            style={styles.input}
+            onChangeText={onChangePassword}
+            value={password}
+            secureTextEntry={true}
+            label="Ingrese contraseña"
+          />
+        </View>
 
-            {/* <View style={styles.row}>
+        {/* <View style={styles.row}>
             <Text>
               {date ? `Fecha: ${dayjs(date).format('DD/MM/YYYY')}` : ''}
             </Text>
@@ -145,18 +132,16 @@ export default function ModalMap(props) {
               }}
             />
           </View> */}
-            <View style={{paddingTop: 20}}>
-              <Button
-                mode="outlined"
-                style={[styles.button, styles.buttonClose]}
-                onPress={() => addMarker()}>
-                <Text>Crear Usuario</Text>
-              </Button>
-            </View>
-          </View>
+        <View style={{paddingTop: 20}}>
+          <Button
+            mode="outlined"
+            style={[styles.button, styles.buttonClose]}
+            onPress={() => addMarker()}>
+            <Text>Crear Usuario</Text>
+          </Button>
         </View>
-      </Modal>
-    </Portal>
+      </View>
+    </View>
   );
 }
 

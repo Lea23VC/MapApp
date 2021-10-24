@@ -1,16 +1,9 @@
 import React, {useState, useEffect} from 'react';
-import {
-  View,
-  Text,
-  Button,
-  Pressable,
-  StyleSheet,
-  TextInput,
-} from 'react-native';
+import {View, Text, Pressable, StyleSheet} from 'react-native';
 import auth from '@react-native-firebase/auth';
-
+import {Button, TextInput, HelperText} from 'react-native-paper';
 import ModalCreateUser from '../components/sign_login/modalCreateUser';
-
+import firestore from '@react-native-firebase/firestore';
 export default function App({navigation}) {
   // Set an initializing state whilst Firebase connects
 
@@ -18,8 +11,8 @@ export default function App({navigation}) {
   const [initializing, setInitializing] = useState(true);
   const [user, setUser] = useState();
 
-  const [email, onChangeEmail] = React.useState(null);
-  const [password, onChangePassword] = React.useState(null);
+  const [email, onChangeEmail] = React.useState('');
+  const [password, onChangePassword] = React.useState('');
   const checkTextInput = () => {
     //Check for the Name TextInput
     if (!textInputName.trim()) {
@@ -37,44 +30,28 @@ export default function App({navigation}) {
   };
 
   // Handle user state changes
-  function onAuthStateChanged(user) {
+  async function onAuthStateChanged(user) {
     console.log('user in oath: ', user);
+
     setUser(user);
     if (initializing) setInitializing(false);
   }
 
-  function createUser(email, password) {
-    auth()
-      .createUserWithEmailAndPassword(
-        'jane.doe@example.com',
-        'SuperSecretPassword!',
-      )
-      .then(users => {
-        console.log(users);
-        console.log('User account created & signed in!');
-      })
-      .catch(error => {
-        if (error.code === 'auth/email-already-in-use') {
-          console.log('That email address is already in use!');
-        }
-
-        if (error.code === 'auth/invalid-email') {
-          console.log('That email address is invalid!');
-        }
-
-        console.error(error);
-      });
-  }
+  const hasErrors = () => {
+    if (email.length >= 5) {
+      return !email.includes('@');
+    }
+    return false;
+  };
 
   function loginUser(email, password) {
-    console.log('Print test: ', email);
+    //Check for the Email TextInput
     if (!email.trim()) {
-      alert('Please Enter Name');
+      alert('Please Enter Email');
       return;
     }
-    //Check for the Email TextInput
     if (!password.trim()) {
-      alert('Please Enter Email');
+      alert('Please Enter Password');
       return;
     }
     //Checked Successfully
@@ -106,6 +83,12 @@ export default function App({navigation}) {
       .then(() => console.log('User signed out!'));
   }
 
+  async function goToMap() {
+    const user_data = await firestore().collection('Users').doc(user.uid).get();
+    console.log('user data: ', user_data);
+    navigation.navigate('Map', {name: 'Jane', user: user_data});
+  }
+
   useEffect(() => {
     const subscriber = auth().onAuthStateChanged(onAuthStateChanged);
     return subscriber; // unsubscribe on unmount
@@ -116,35 +99,55 @@ export default function App({navigation}) {
   if (!user) {
     return (
       <View>
-        <View>
+        <View style={styles.container}>
           <ModalCreateUser
             modalVisible={modalVisible}
             setModalVisible={setModalVisible}
+            auth={auth}
           />
 
           <TextInput
+            mode="outlined"
             style={styles.input}
             onChangeText={onChangeEmail}
             value={email}
-            placeholder="Ingrese email"
+            label="Ingrese email"
           />
+          <HelperText type="error" visible={hasErrors()}>
+            Correo no valido
+          </HelperText>
 
           <TextInput
+            mode="outlined"
             style={styles.input}
             onChangeText={onChangePassword}
             value={password}
             secureTextEntry={true}
-            placeholder="Ingrese contraseña"
+            label="Ingrese contraseña"
           />
 
-          <Button
-            title="Iniciar sesión"
-            onPress={() => {
-              loginUser(email, password);
-            }}
-          />
-
-          <Button title="Crear usuario" onPress={() => setModalVisible(true)} />
+          <View style={styles.buttonPadding}>
+            <Button
+              style={styles.button}
+              icon="login"
+              mode="outlined"
+              onPress={() => {
+                loginUser(email, password);
+              }}>
+              Iniciar sesión
+            </Button>
+          </View>
+          <View style={styles.buttonPadding}>
+            <Button
+              style={styles.button}
+              icon="login"
+              mode="outlined"
+              onPress={() =>
+                navigation.navigate('SignUp', {name: 'Jane', auth: auth})
+              }>
+              Registrarse
+            </Button>
+          </View>
 
           {/* <Pressable
             style={[styles.button, styles.buttonClose]}
@@ -161,34 +164,47 @@ export default function App({navigation}) {
   return (
     <View>
       <Text>Welcome {user.email}</Text>
-      <Button
-        title="Cerrar Sesión"
-        onPress={() => {
-          signOut();
-        }}
-      />
 
       <Button
-        title="Ver Mapa"
+        style={styles.button}
+        icon="login"
+        mode="outlined"
         onPress={() => {
-          navigation.navigate('Map', {name: 'Jane', user: user});
-        }}
-      />
+          signOut();
+        }}>
+        Cerrar Sesión
+      </Button>
+
+      <Button
+        style={styles.button}
+        icon="login"
+        mode="outlined"
+        onPress={() => {
+          goToMap();
+        }}>
+        Ver Mapa
+      </Button>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    width: '70%',
+    alignSelf: 'center',
+  },
+  button: {
+    alignSelf: 'center',
+  },
+  buttonPadding: {
+    paddingTop: 10,
+    paddingBottom: 10,
+  },
   centeredView: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 22,
-  },
-  button: {
-    borderRadius: 20,
-    padding: 10,
-    elevation: 2,
   },
 
   buttonClose: {

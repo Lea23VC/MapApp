@@ -41,34 +41,6 @@ firestore()
     });
   });
 
-// You want to get the list of documents in the student collection
-
-// firestore()
-//   .ref('/Maps')
-//   .child('map')
-//   .once('value')
-//   .then(data => {
-//     let fetchedData = data.val();
-//     console.log('Fetched Data', fetchedData);
-//   })
-//   .catch(error => {
-//     console.log('Fetching Error', error);
-//   });
-
-// var a = [];
-// firestore()
-//   .collection('Maps')
-//   .get()
-//   .then(querySnapshot => {
-//     querySnapshot.forEach(snapshot => {
-//       let data = snapshot.data();
-//       console.log(data);
-//       a = [...a, data];
-//     });
-
-//     return querySnapshot;
-//   });
-
 const initialState = {
   latitude: null,
   longitude: null,
@@ -76,7 +48,8 @@ const initialState = {
   longitudeDelta: 0.000421,
 };
 
-export default function mapView() {
+export default function mapView(props) {
+  console.log('params: ', props.user);
   const [modalVisible, setModalVisible] = useState(false);
 
   const [markers, setMarkers] = useState([]);
@@ -109,6 +82,15 @@ export default function mapView() {
       enableHighAccuracy: true,
     },
   );
+  function addMarker() {
+    console.log(props.user);
+    props.navigation.navigate('AddMarker', {
+      setMarkers: setMarkers,
+      markers: markers,
+      currentPosition: currentPosition,
+      user: props.user,
+    });
+  }
 
   return currentPosition.latitude ? (
     <View style={styles.container}>
@@ -121,6 +103,7 @@ export default function mapView() {
         setMarkers={setMarkers}
         markers={markers}
         currentPosition={currentPosition}
+        user={props.user}
       />
       <MapView
         onPress={e =>
@@ -194,7 +177,14 @@ export default function mapView() {
         </Text>
 
         <Pressable
-          onPress={() => setModalVisible(true)}
+          onPress={() =>
+            props.navigation.navigate('AddMarker', {
+              setMarkers: setMarkers,
+              markers: markers,
+              currentPosition: currentPosition,
+              user: props.user,
+            })
+          }
           title="Agregar sitio"
           style={styles.button}
           accessibilityLabel="Learn more about this purple button">

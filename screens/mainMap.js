@@ -16,7 +16,9 @@ import Geolocation from 'react-native-geolocation-service';
 import ModalMap from '../components/map/modalMap.js';
 import MapView from '../components/map/mapView.js';
 import firestore from '@react-native-firebase/firestore';
+import {createMaterialBottomTabNavigator} from '@react-navigation/material-bottom-tabs';
 
+const Tab = createMaterialBottomTabNavigator();
 var b = [];
 var aux = 0;
 firestore()
@@ -28,47 +30,10 @@ firestore()
     console.log(querySnapshot.docs);
     b = querySnapshot.docs.map(doc => doc.data());
     console.log('B: ', b);
-    querySnapshot.forEach(snapshot => {
-      // console.log('item: ', i);
-      // let data = snapshot.data();
-      // console.log('XD ', data);
-      // if (i >= aux) {
-      //   aux = i;
-      //   b.push(data);
-      // }
-      // i++;
-    });
+    querySnapshot.forEach(snapshot => {});
 
     console.log('total: ', aux);
   });
-
-// You want to get the list of documents in the student collection
-
-// firestore()
-//   .ref('/Maps')
-//   .child('map')
-//   .once('value')
-//   .then(data => {
-//     let fetchedData = data.val();
-//     console.log('Fetched Data', fetchedData);
-//   })
-//   .catch(error => {
-//     console.log('Fetching Error', error);
-//   });
-
-// var a = [];
-// firestore()
-//   .collection('Maps')
-//   .get()
-//   .then(querySnapshot => {
-//     querySnapshot.forEach(snapshot => {
-//       let data = snapshot.data();
-//       console.log(data);
-//       a = [...a, data];
-//     });
-
-//     return querySnapshot;
-//   });
 
 const initialState = {
   latitude: null,
@@ -77,7 +42,7 @@ const initialState = {
   longitudeDelta: 0.000421,
 };
 
-export default function App() {
+export default function App({route, navigation}) {
   const permission = () => {
     PermissionsAndroid.request(
       PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
@@ -114,7 +79,7 @@ export default function App() {
   return (
     <View style={styles.container}>
       <StatusBar style="auto" />
-      <MapView />
+      <MapView user={route.params.user} navigation={navigation} />
 
       {/* <ModalMap
         modalVisible={modalVisible}

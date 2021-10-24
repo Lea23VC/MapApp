@@ -6,7 +6,10 @@ const Stack = createNativeStackNavigator();
 const ProfileScreen = ({navigation, route}) => {
   return <Text>This is {route.params.name}'s profile</Text>;
 };
+
+import signUp from './screens/auth/signup';
 import MainMap from './screens/mainMap';
+import addMarker from './screens/maps/addMarker';
 import Home from './screens/home';
 import {LogBox} from 'react-native';
 LogBox.ignoreLogs([
@@ -23,6 +26,8 @@ export default function App() {
           component={MainMap}
           options={{title: 'Mapa'}}
         />
+        <Stack.Screen name="SignUp" component={signUp} />
+        <Stack.Screen name="AddMarker" component={addMarker} />
       </Stack.Navigator>
     </NavigationContainer>
   );
