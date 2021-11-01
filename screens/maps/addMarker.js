@@ -6,10 +6,20 @@ import {
   Modal,
   Pressable,
   ScrollView,
+  Platform,
 } from 'react-native';
 
 import firestore from '@react-native-firebase/firestore';
-import {Checkbox, TextInput} from 'react-native-paper';
+import {
+  Checkbox,
+  TextInput,
+  Button,
+  ActivityIndicator,
+  Colors,
+} from 'react-native-paper';
+import ImagePicker from 'react-native-image-crop-picker';
+
+import storage from '@react-native-firebase/storage';
 
 export default function ModalMap({navigation, route}) {
   const [text, onChangeText] = React.useState('Useless Text');
@@ -28,16 +38,29 @@ export default function ModalMap({navigation, route}) {
   const [cellphones, setCellphones] = React.useState(false);
   const [batteries, setBatteries] = React.useState(false);
   const [oil, setOil] = React.useState(false);
+  const [imagePoint, setImagePoint] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [transferred, setTransferred] = useState(0);
+  const [addingMarker, setAddingMarker] = useState(false);
+  async function addMarker() {
+    setAddingMarker(true);
+    let imgUrl = await uploadImage();
+    if (!imgUrl) {
+      alert('Porfavor, suba una foto');
+      setAddingMarker(false);
+      return;
+    }
 
-  // console.log(props.user.data().uid);
-  function addMarker() {
+    // if (imgUrl == null && userData.userImg) {
+    //   imgUrl = userData.userImg;
+    // }
     route.params.setMarkers([
       ...route.params.markers,
       {latlng: route.params.currentPosition, title: name},
     ]);
 
     // console.log(props.modalMarkers);
-    console.log('modal console log: ', route.params.currentPosition);
+    // console.log('modal console log: ', route.params.currentPosition);
 
     var recyclableMaterials = {
       PET: PET,
@@ -53,6 +76,7 @@ export default function ModalMap({navigation, route}) {
       cellphones: cellphones,
       batteries: batteries,
       oil: oil,
+      imgUrl: imgUrl,
     };
 
     onChangeName(null);
@@ -68,6 +92,7 @@ export default function ModalMap({navigation, route}) {
           uid: route.params.user.data().uid,
           username: route.params.user.data().username,
         },
+        votes: 0,
       })
       .then(() => {
         console.log('Map added!');
@@ -87,8 +112,86 @@ export default function ModalMap({navigation, route}) {
     setBatteries(false);
     setOil(false);
 
+    setAddingMarker(false);
+
     navigation.goBack();
   }
+
+  const uploadImage = async () => {
+    if (imagePoint == null) {
+      return null;
+    }
+    const uploadUri = imagePoint;
+    let filename = uploadUri.substring(uploadUri.lastIndexOf('/') + 1);
+
+    // Add timestamp to File Name
+    const extension = filename.split('.').pop();
+    const name = filename.split('.').slice(0, -1).join('.');
+    filename = name + Date.now() + '.' + extension;
+
+    setUploading(true);
+    setTransferred(0);
+
+    const storageRef = storage().ref(`photos/${filename}`);
+    const task = storageRef.putFile(uploadUri);
+
+    // Set transferred state
+    task.on('state_changed', taskSnapshot => {
+      console.log(
+        `${taskSnapshot.bytesTransferred} transferred out of ${taskSnapshot.totalBytes}`,
+      );
+
+      setTransferred(
+        Math.round(taskSnapshot.bytesTransferred / taskSnapshot.totalBytes) *
+          100,
+      );
+    });
+
+    try {
+      await task;
+      const url = await storageRef.getDownloadURL();
+      setUploading(false);
+      setImagePoint(null);
+
+      // Alert.alert(
+      //   'Image uploaded!',
+      //   'Your image has been uploaded to the Firebase Cloud Storage Successfully!',
+      // );
+      return url;
+    } catch (e) {
+      console.log(e);
+      return null;
+    }
+  };
+
+  const takePhotoFromCamera = () => {
+    ImagePicker.openCamera({
+      compressImageMaxWidth: 300,
+      compressImageMaxHeight: 300,
+      cropping: true,
+      compressImageQuality: 0.7,
+    }).then(image => {
+      console.log(image);
+      const imageUri = Platform.OS === 'ios' ? image.sourceURL : image.path;
+      setImagePoint(imageUri);
+      // this.bs.current.snapTo(1);
+    });
+  };
+
+  const choosePhotoFromLibrary = () => {
+    ImagePicker.openPicker({
+      width: 300,
+      height: 300,
+      cropping: true,
+      compressImageQuality: 0.7,
+    }).then(image => {
+      console.log(image);
+      const imageUri = Platform.OS === 'ios' ? image.sourceURL : image.path;
+      setImagePoint(imageUri);
+      console.log(imageUri);
+      // this.bs.current.snapTo(1);
+    });
+  };
 
   return (
     <View style={styles.centeredView}>
@@ -181,6 +284,7 @@ export default function ModalMap({navigation, route}) {
                 setBatteries(!batteries);
               }}
             />
+
             <Checkbox.Item
               label="Aceite"
               status={oil ? 'checked' : 'unchecked'}
@@ -191,11 +295,26 @@ export default function ModalMap({navigation, route}) {
           </ScrollView>
         </View>
 
+        <View style={{paddingTop: 20}}>
+          <Button
+            mode="outlined"
+            style={styles.panelButton}
+            onPress={takePhotoFromCamera}>
+            <Text style={styles.panelButtonTitle}>
+              {imagePoint ? 'Cambiar imagen' : 'Subir imagen'}
+            </Text>
+          </Button>
+        </View>
+
         <Pressable
           style={[styles.button, styles.buttonClose]}
           onPress={() => addMarker()}>
           <Text style={styles.textStyle}>Agregar sitio</Text>
         </Pressable>
+
+        {addingMarker && (
+          <ActivityIndicator animating={true} color={Colors.red800} />
+        )}
       </View>
     </View>
   );
@@ -210,18 +329,19 @@ const styles = StyleSheet.create({
 
   viewText: {},
 
+  textStyle: {
+    color: 'white',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
   button: {
     borderRadius: 20,
     padding: 10,
     elevation: 2,
   },
-
-  buttonClose: {
-    backgroundColor: '#2196F3',
-  },
-  textStyle: {
-    color: 'white',
+  panelButtonTitle: {
+    fontSize: 17,
     fontWeight: 'bold',
-    textAlign: 'center',
+    color: 'blue',
   },
 });

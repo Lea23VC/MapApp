@@ -1,6 +1,6 @@
 import React, {Component, useState, setState, useEffect} from 'react';
 
-import MapView, {Marker, Callout, Geojson} from 'react-native-maps';
+import MapView, {Marker, Callout} from 'react-native-maps';
 
 import ModalMap from './modalMap.js';
 
@@ -26,19 +26,10 @@ firestore()
   .collection('Maps')
   .orderBy('createdAt')
   .onSnapshot(querySnapshot => {
-    console.log(querySnapshot.docs);
+    // console.log(querySnapshot.docs);
     b = querySnapshot.docs.map(doc => doc.data());
-    console.log('B: ', b);
-    querySnapshot.forEach(snapshot => {
-      // console.log('item: ', i);
-      // let data = snapshot.data();
-      // console.log('XD ', data);
-      // if (i >= aux) {
-      //   aux = i;
-      //   b.push(data);
-      // }
-      // i++;
-    });
+    // console.log('B: ', b);
+    // querySnapshot.forEach(snapshot => {});
   });
 
 const initialState = {
@@ -49,7 +40,7 @@ const initialState = {
 };
 
 export default function mapView(props) {
-  console.log('params: ', props.user);
+  // console.log('params: ', props.user);
   const [modalVisible, setModalVisible] = useState(false);
 
   const [markers, setMarkers] = useState([]);

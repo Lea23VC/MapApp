@@ -26,13 +26,13 @@ firestore()
   .orderBy('createdAt')
   .onSnapshot(querySnapshot => {
     var i = 0;
-    console.log('i: ', i);
-    console.log(querySnapshot.docs);
+    // console.log('i: ', i);
+    // console.log(querySnapshot.docs);
     b = querySnapshot.docs.map(doc => doc.data());
-    console.log('B: ', b);
+    // console.log('B: ', b);
     querySnapshot.forEach(snapshot => {});
 
-    console.log('total: ', aux);
+    // console.log('total: ', aux);
   });
 
 const initialState = {

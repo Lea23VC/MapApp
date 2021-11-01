@@ -9,7 +9,8 @@ import {
 } from 'react-native';
 
 import firestore from '@react-native-firebase/firestore';
-import {Checkbox, TextInput} from 'react-native-paper';
+import {Checkbox, TextInput, Button} from 'react-native-paper';
+import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 
 export default function ModalMap(props) {
   const [text, onChangeText] = React.useState('Useless Text');
@@ -87,6 +88,16 @@ export default function ModalMap(props) {
     setBatteries(false);
     setOil(false);
   }
+
+  const onTakePhoto = () => launchCamera({mediaType: 'image'}, onMediaSelect);
+  const onSelectImagePress = () =>
+    launchImageLibrary({mediaType: 'image'}, onMediaSelect);
+
+  const onMediaSelect = async media => {
+    if (!media.didCancel) {
+      // Upload Process
+    }
+  };
 
   return (
     <Modal
@@ -202,6 +213,13 @@ export default function ModalMap(props) {
             onPress={() => addMarker()}>
             <Text style={styles.textStyle}>Agregar sitio</Text>
           </Pressable>
+
+          <Button
+            mode="outlined"
+            style={[styles.button, styles.buttonClose]}
+            onPress={() => addMarker()}>
+            <Text>Crear Usuario</Text>
+          </Button>
         </View>
       </View>
     </Modal>
@@ -236,15 +254,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
   },
-  button: {
-    borderRadius: 20,
-    padding: 10,
-    elevation: 2,
-  },
 
-  buttonClose: {
-    backgroundColor: '#2196F3',
-  },
   textStyle: {
     color: 'white',
     fontWeight: 'bold',
