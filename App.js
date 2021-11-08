@@ -11,6 +11,9 @@ import signUp from './screens/auth/signup';
 import MainMap from './screens/mainMap';
 import addMarker from './screens/maps/addMarker';
 import Home from './screens/home';
+import editMarker from './screens/maps/editMarker';
+import Profile from './screens/profile';
+
 import {LogBox} from 'react-native';
 LogBox.ignoreLogs([
   'Non-serializable values were found in the navigation state',
@@ -26,8 +29,27 @@ export default function App() {
           component={MainMap}
           options={{title: 'Mapa'}}
         />
-        <Stack.Screen name="SignUp" component={signUp} />
-        <Stack.Screen name="AddMarker" component={addMarker} />
+        <Stack.Screen
+          name="SignUp"
+          component={signUp}
+          options={{title: 'Registrarse'}}
+        />
+        <Stack.Screen
+          name="AddMarker"
+          component={addMarker}
+          options={{title: 'Añadir marcador'}}
+        />
+        <Stack.Screen
+          name="EditMarker"
+          component={editMarker}
+          options={{title: 'Editar marcador'}}
+        />
+
+        <Stack.Screen
+          name="Profile"
+          component={Profile}
+          options={{title: 'Perfil'}}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

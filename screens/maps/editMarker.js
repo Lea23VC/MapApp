@@ -7,9 +7,8 @@ import {
   Pressable,
   ScrollView,
   Platform,
-  Image,
 } from 'react-native';
-import {Svg, Image as ImageSvg} from 'react-native-svg';
+
 import firestore from '@react-native-firebase/firestore';
 import {
   Checkbox,
@@ -45,32 +44,14 @@ Geocode.setLocationType('ROOFTOP');
 // Enable or disable logs. Its optional.
 Geocode.enableDebug();
 
-export default function ModalMap({navigation, route}) {
+export default function EditMarker({navigation, route}) {
   const [text, onChangeText] = React.useState('Useless Text');
-  const [name, onChangeName] = React.useState(
-    route.params.marker?.title ? route.params.marker.title : null,
-  );
+  const [name, onChangeName] = React.useState(null);
 
-  const [PET, setPET] = React.useState(
-    route.params.marker.recyclableMaterials?.PET
-      ? route.params.marker.recyclableMaterials.PET
-      : false,
-  );
-  const [PE, setPE] = React.useState(
-    route.params.marker.recyclableMaterials?.PE
-      ? route.params.marker.recyclableMaterials.PE
-      : false,
-  );
-  const [PVC, setPVC] = React.useState(
-    route.params.marker.recyclableMaterials?.PVC
-      ? route.params.marker.recyclableMaterials.PVC
-      : false,
-  );
-  const [aluminium, setAluminium] = React.useState(
-    route.params.marker.recyclableMaterials?.aluminium
-      ? route.params.marker.recyclableMaterials.aluminium
-      : false,
-  );
+  const [PET, setPET] = React.useState(false);
+  const [PE, setPE] = React.useState(false);
+  const [PVC, setPVC] = React.useState(false);
+  const [aluminium, setAluminium] = React.useState(false);
   const [cardboard, setCardboard] = React.useState(false);
   const [glass, setGlass] = React.useState(false);
   const [paper, setPaper] = React.useState(false);
@@ -80,9 +61,7 @@ export default function ModalMap({navigation, route}) {
   const [cellphones, setCellphones] = React.useState(false);
   const [batteries, setBatteries] = React.useState(false);
   const [oil, setOil] = React.useState(false);
-  const [imagePoint, setImagePoint] = useState(
-    route.params.marker.imgUrl ? route.params.marker.imgUrl : null,
-  );
+  const [imagePoint, setImagePoint] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [transferred, setTransferred] = useState(0);
   const [addingMarker, setAddingMarker] = useState(false);
@@ -160,6 +139,10 @@ export default function ModalMap({navigation, route}) {
     // if (imgUrl == null && userData.userImg) {
     //   imgUrl = userData.userImg;
     // }
+    route.params.setMarkers([
+      ...route.params.markers,
+      {latlng: route.params.currentPosition, title: name},
+    ]);
 
     console.log(route.params.currentPosition);
     // console.log('modal console log: ', route.params.currentPosition);
@@ -278,7 +261,6 @@ export default function ModalMap({navigation, route}) {
       console.log(image);
       const imageUri = Platform.OS === 'ios' ? image.sourceURL : image.path;
       setImagePoint(imageUri);
-      console.log(imagePoint);
       // this.bs.current.snapTo(1);
     });
   };
@@ -293,7 +275,7 @@ export default function ModalMap({navigation, route}) {
       console.log(image);
       const imageUri = Platform.OS === 'ios' ? image.sourceURL : image.path;
       setImagePoint(imageUri);
-      console.log(imagePoint);
+      console.log(imageUri);
       // this.bs.current.snapTo(1);
     });
   };
@@ -397,39 +379,29 @@ export default function ModalMap({navigation, route}) {
                 setOil(!oil);
               }}
             />
-
-            <View style={{paddingTop: 20}}>
-              {imagePoint && (
-                <View style={styles.imageContainer}>
-                  <Image
-                    style={styles.tinyLogo}
-                    source={{
-                      uri: route.params.marker.imgUrl,
-                    }}
-                  />
-                </View>
-              )}
-              <Button
-                mode="outlined"
-                style={styles.panelButton}
-                onPress={takePhotoFromCamera}>
-                <Text style={styles.panelButtonTitle}>
-                  {imagePoint ? 'Cambiar imagen' : 'Subir imagen'}
-                </Text>
-              </Button>
-            </View>
-
-            <Pressable
-              style={[styles.button, styles.buttonClose]}
-              onPress={() => addMarker()}>
-              <Text style={styles.textStyle}>Agregar sitio</Text>
-            </Pressable>
-
-            {addingMarker && (
-              <ActivityIndicator animating={true} color={Colors.red800} />
-            )}
           </ScrollView>
         </View>
+
+        <View style={{paddingTop: 20}}>
+          <Button
+            mode="outlined"
+            style={styles.panelButton}
+            onPress={takePhotoFromCamera}>
+            <Text style={styles.panelButtonTitle}>
+              {imagePoint ? 'Cambiar imagen' : 'Subir imagen'}
+            </Text>
+          </Button>
+        </View>
+
+        <Pressable
+          style={[styles.button, styles.buttonClose]}
+          onPress={() => addMarker()}>
+          <Text style={styles.textStyle}>Agregar sitio</Text>
+        </Pressable>
+
+        {addingMarker && (
+          <ActivityIndicator animating={true} color={Colors.red800} />
+        )}
       </View>
     </View>
   );
@@ -458,13 +430,5 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: 'bold',
     color: 'blue',
-  },
-  imageContainer: {
-    justifycontent: 'center',
-  },
-  tinyLogo: {
-    alignSelf: 'center',
-    width: 300,
-    height: 300,
   },
 });

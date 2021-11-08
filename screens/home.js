@@ -89,6 +89,10 @@ export default function App({navigation}) {
     navigation.navigate('Map', {name: 'Jane', user: user_data});
   }
 
+  async function goToProfile() {
+    navigation.navigate('Profile', {userId: user.uid});
+  }
+
   useEffect(() => {
     const subscriber = auth().onAuthStateChanged(onAuthStateChanged);
     return subscriber; // unsubscribe on unmount
@@ -183,6 +187,16 @@ export default function App({navigation}) {
           goToMap();
         }}>
         Ver Mapa
+      </Button>
+
+      <Button
+        style={styles.button}
+        icon="login"
+        mode="outlined"
+        onPress={() => {
+          goToProfile();
+        }}>
+        Ver Perfil
       </Button>
     </View>
   );

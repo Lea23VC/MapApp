@@ -23,6 +23,7 @@
     "expo-location": "^12.1.2",
     "firebase": "^9.0.2",
     "react": "17.0.2",
+    "react-geocode": "^0.2.3",
     "react-native": "^0.66.0",
     "react-native-date-picker": "^4.1.0",
     "react-native-eject": "^0.1.2",
@@ -36,6 +37,7 @@
     "react-native-paper": "^4.9.2",
     "react-native-safe-area-context": "^3.3.2",
     "react-native-screens": "^3.8.0",
+    "react-native-svg": "^12.1.1",
     "react-native-unimodules": "^0.14.8",
     "react-native-vector-icons": "^8.1.0"
   },
