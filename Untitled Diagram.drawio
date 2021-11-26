@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" modified="2021-11-26T02:26:06.829Z" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36 OPR/81.0.4196.52" etag="1QSMEqY1Bm59Q_eHBs6c" version="15.8.6" type="github">
+<mxfile host="app.diagrams.net" modified="2021-11-26T02:38:31.553Z" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36 OPR/81.0.4196.52" etag="3gMOBiXipgh8pzs3vtIs" version="15.8.6" type="github">
   <diagram id="C5RBs43oDa-KdzZeNtuy" name="Page-1">
     <mxGraphModel dx="1378" dy="740" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
@@ -94,6 +94,11 @@
         <mxCell id="IOjtNfFjlT_Ctr0Tbmb2-41" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="IOjtNfFjlT_Ctr0Tbmb2-39" target="IOjtNfFjlT_Ctr0Tbmb2-40" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
+        <mxCell id="oqOhQ0GZV4TEFaddQn08-0" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="IOjtNfFjlT_Ctr0Tbmb2-39" target="oqOhQ0GZV4TEFaddQn08-1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="400" y="510" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
         <mxCell id="IOjtNfFjlT_Ctr0Tbmb2-39" value="Ir a pantalla de login" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
           <mxGeometry x="160" y="490" width="120" height="40" as="geometry" />
         </mxCell>
@@ -105,6 +110,9 @@
         </mxCell>
         <mxCell id="IOjtNfFjlT_Ctr0Tbmb2-42" value="Ir a pantalla de inicio de la aplicación" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
           <mxGeometry x="160" y="690" width="120" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="oqOhQ0GZV4TEFaddQn08-1" value="Recuperar contraseña" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry x="390" y="490" width="116" height="40" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
