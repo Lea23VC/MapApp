@@ -22,49 +22,6 @@ export default function ProfileScreen({navigation, route}) {
   const [deleted, setDeleted] = useState(false);
   const [userData, setUserData] = useState(null);
 
-  // const fetchPosts = async () => {
-  //   try {
-  //     const list = [];
-
-  //     await firestore()
-  //       .collection('posts')
-  //       .where('userId', '==', route.params ? route.params.userId : user.uid)
-  //       .orderBy('postTime', 'desc')
-  //       .get()
-  //       .then(querySnapshot => {
-  //         // console.log('Total Posts: ', querySnapshot.size);
-
-  //         querySnapshot.forEach(doc => {
-  //           const {userId, post, postImg, postTime, likes, comments} =
-  //             doc.data();
-  //           list.push({
-  //             id: doc.id,
-  //             userId,
-  //             userName: 'Test Name',
-  //             userImg:
-  //               'https://lh5.googleusercontent.com/-b0PKyNuQv5s/AAAAAAAAAAI/AAAAAAAAAAA/AMZuuclxAM4M1SCBGAO7Rp-QP6zgBEUkOQ/s96-c/photo.jpg',
-  //             postTime: postTime,
-  //             post,
-  //             postImg,
-  //             liked: false,
-  //             likes,
-  //             comments,
-  //           });
-  //         });
-  //       });
-
-  //     setPosts(list);
-
-  //     if (loading) {
-  //       setLoading(false);
-  //     }
-
-  //     console.log('Posts: ', posts);
-  //   } catch (e) {
-  //     console.log(e);
-  //   }
-  // };
-
   const getUser = async () => {
     await firestore()
       .collection('Users')
@@ -144,7 +101,9 @@ export default function ProfileScreen({navigation, route}) {
             <Text style={styles.userInfoSubTitle}>Posts</Text>
           </View> */}
           <View style={styles.userInfoItem}>
-            <Text style={styles.userInfoTitle}>{userData.points}</Text>
+            <Text style={styles.userInfoTitle}>
+              {userData ? userData.points || 0 : 0}
+            </Text>
             <Text style={styles.userInfoSubTitle}>Puntos</Text>
           </View>
           {/* <View style={styles.userInfoItem}>

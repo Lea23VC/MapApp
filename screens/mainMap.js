@@ -303,6 +303,7 @@ export default function App({route, navigation}) {
   return currentPosition.latitude && address ? (
     <View>
       <MapView
+        showsMyLocationButton={true}
         showsUserLocation
         followsUserLocation
         style={styles.map}
@@ -388,7 +389,7 @@ export default function App({route, navigation}) {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
         style={styles.searchBox}>
         <TextInput
-          placeholder="Search here"
+          placeholder="Busca tu punto de reciclaje"
           placeholderTextColor="#000"
           autoCapitalize="none"
           style={{flex: 1, padding: 0}}

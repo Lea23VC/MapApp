@@ -1,8 +1,8 @@
 import React, {Component, useState, setState, useEffect} from 'react';
 
-import MapView, {Marker, Callout, AnimatedRegion} from 'react-native-maps';
+import MapView, {Marker, Callout} from 'react-native-maps';
 
-import ModalMap from './modalMap.js';
+// import ModalMap from './modalMap.js';
 
 // import mapStyle from 'C:/Users/leand/Documents/Local Repo/MapApp/style/mapStyle.js';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -274,6 +274,7 @@ export default function mapView(props) {
         onPress={e =>
           setMarkers([...markers, {latlng: e.nativeEvent.coordinate}])
         }
+        showsMyLocationButton={true}
         showsUserLocation
         followsUserLocation
         style={styles.map}
@@ -354,7 +355,7 @@ export default function mapView(props) {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
         style={styles.searchBox}>
         <TextInput
-          placeholder="Search here"
+          placeholder="Busca tu punto de reciclaje"
           placeholderTextColor="#000"
           autoCapitalize="none"
           style={{flex: 1, padding: 0}}
