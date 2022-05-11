@@ -33,6 +33,11 @@ export default function App({navigation}) {
   async function onAuthStateChanged(user) {
     console.log('user in oath: ', user);
 
+    if (user) {
+      token = await user.getIdToken();
+      console.log('token: ', token);
+    }
+
     setUser(user);
     if (initializing) setInitializing(false);
   }
