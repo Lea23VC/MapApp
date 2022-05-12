@@ -19,6 +19,7 @@
     "@react-navigation/material-bottom-tabs": "^6.0.8",
     "@react-navigation/native": "^6.0.4",
     "@react-navigation/native-stack": "^6.2.2",
+    "axios": "^0.27.2",
     "dayjs": "^1.10.7",
     "expo-location": "^12.1.2",
     "firebase": "^9.0.2",

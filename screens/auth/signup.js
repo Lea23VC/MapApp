@@ -1,24 +1,24 @@
 import React, {useState} from 'react';
-import {StyleSheet, Text, View, Pressable} from 'react-native';
-import {Checkbox, TextInput, Modal, Portal, Button} from 'react-native-paper';
-
-var dayjs = require('dayjs');
-import firestore from '@react-native-firebase/firestore';
-import DatePicker from 'react-native-date-picker';
+import {StyleSheet, Text, View} from 'react-native';
+import {TextInput, Button} from 'react-native-paper';
+import {registerUser} from '../../api/users';
+// var dayjs = require('dayjs');
+// import firestore from '@react-native-firebase/firestore';
+// import DatePicker from 'react-native-date-picker';
 export default function ModalMap({route, navigation}) {
   console.log('route: ', route.params);
-  const [date, setDate] = useState(null);
-  const [open, setOpen] = useState(false);
+  const [date, setDate] = useState(new Date());
+  // const [open, setOpen] = useState(false);
   const [firstName, onChangeFirstName] = React.useState(null);
-  const [lastName, onChangeLastName] = React.useState(null);
+  // const [lastName, onChangeLastName] = React.useState(null);
   const [email, onChangeEmail] = React.useState(null);
   const [password, onChangePassword] = React.useState(null);
   const [username, onChangeUserName] = React.useState(null);
-  const [birthDate, onChangeBirthDate] = React.useState(null);
+  // const [birthDate, onChangeBirthDate] = React.useState(null);
 
-  const dateNow = new Date();
-  const hideModal = () => props.setModalVisible(false);
-  async function addMarker() {
+  // const dateNow = new Date();
+  // const hideModal = () => props.setModalVisible(false);
+  async function addUser() {
     const cred = await route.params
       .auth()
       .createUserWithEmailAndPassword(email, password)
@@ -26,29 +26,7 @@ export default function ModalMap({route, navigation}) {
         const uid = user.user.uid;
         console.log('user created: ', uid);
         console.log('User account created & signed in!');
-
-        firestore()
-          .collection('Users')
-          .doc(uid)
-          .set({
-            uid: uid,
-            username: username,
-            firstName: firstName,
-            lastName: lastName,
-            birthDate: date,
-            createdAt: firestore.FieldValue.serverTimestamp(),
-            points: 0,
-          })
-          .then(() => {
-            console.log('User added!');
-          });
-
-        // firestore()
-        //   .collection('Users')
-        //   .add({})
-        //   .then(() => {
-        //     console.log('Map added!');
-        //   });
+        registerUser(uid, username, firstName, date, email);
       })
       .catch(error => {
         if (error.code === 'auth/email-already-in-use') {
@@ -73,14 +51,6 @@ export default function ModalMap({route, navigation}) {
             onChangeText={onChangeFirstName}
             value={firstName}
             label="Ingrese nombre"
-          />
-        </View>
-        <View style={styles.viewText}>
-          <TextInput
-            mode="outlined"
-            onChangeText={onChangeLastName}
-            value={lastName}
-            label="Ingrese apellido(s)"
           />
         </View>
 
@@ -112,6 +82,26 @@ export default function ModalMap({route, navigation}) {
             label="Ingrese contraseña"
           />
         </View>
+        {/* <Button
+          mode="outlined"
+          style={[styles.button, styles.buttonClose]}
+          onPress={() => setOpen(true)}>
+          <Text>Fecha de Nacimiento</Text>
+        </Button>
+        <DatePicker
+          modal
+          mode="date"
+          open={open}
+          date={date}
+          locale="en-GB"
+          onConfirm={date => {
+            setOpen(false);
+            setDate(date);
+          }}
+          onCancel={() => {
+            setOpen(false);
+          }}
+        /> */}
 
         {/* <View style={styles.row}>
             <Text>
@@ -136,7 +126,7 @@ export default function ModalMap({route, navigation}) {
           <Button
             mode="outlined"
             style={[styles.button, styles.buttonClose]}
-            onPress={() => addMarker()}>
+            onPress={() => addUser()}>
             <Text>Crear Usuario</Text>
           </Button>
         </View>
