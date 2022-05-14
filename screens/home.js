@@ -4,6 +4,8 @@ import auth from '@react-native-firebase/auth';
 import {Button, TextInput, HelperText} from 'react-native-paper';
 import ModalCreateUser from '../components/sign_login/modalCreateUser';
 import firestore from '@react-native-firebase/firestore';
+import {loginUserBackend} from '../api/users';
+
 export default function App({navigation}) {
   // Set an initializing state whilst Firebase connects
 
@@ -36,6 +38,7 @@ export default function App({navigation}) {
     if (user) {
       token = await user.getIdToken();
       console.log('token: ', token);
+      loginUserBackend(token);
     }
 
     setUser(user);
@@ -49,7 +52,7 @@ export default function App({navigation}) {
     return false;
   };
 
-  function loginUser(email, password) {
+  async function loginUser(email, password) {
     //Check for the Email TextInput
     if (!email.trim()) {
       alert('Please Enter Email');
@@ -64,10 +67,14 @@ export default function App({navigation}) {
 
     auth()
       .signInWithEmailAndPassword(email, password)
-      .then(users => {
-        console.log(user);
+      .then(async userCredential => {
+        console.log('users: ', userCredential.user);
         console.log('User account created & signed in!');
-        navigation.navigate('Map', {name: 'Jane', user: user});
+        token = await userCredential.user.getIdToken();
+        console.log('token auth: ', token);
+        console.log('user uid: ', userCredential.user.uid);
+        loginUserBackend(token);
+        navigation.navigate('Map', {name: 'Jane', user: userCredential.user});
       })
       .catch(error => {
         if (error.code === 'auth/email-already-in-use') {
