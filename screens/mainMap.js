@@ -62,6 +62,7 @@ firestore()
   });
 
 export default function App({route, navigation}) {
+  console.log('route inside mainMap: ', route.params);
   const initialState = {
     latitude: null,
     longitude: null,
@@ -289,7 +290,7 @@ export default function App({route, navigation}) {
   }
 
   function editMarker(marker) {
-    if (route.params.user.data().uid == marker.user.uid) {
+    if (route.params.user.uid == marker.user.uid) {
       console.log(route.params.user);
       console.log('address data: ', address);
       navigation.navigate('AddMarker', {
@@ -332,7 +333,7 @@ export default function App({route, navigation}) {
                     Usuario: {marker.user.username}
                   </Text>
 
-                  {route.params.user.data().uid == marker.user.uid && (
+                  {route.params.user.uid == marker.user.uid && (
                     <View style={styles.editMarker}>
                       <Button
                         mode="outlined"
