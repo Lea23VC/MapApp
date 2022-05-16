@@ -38,7 +38,7 @@ export default function App({navigation}) {
     if (user) {
       token = await user.getIdToken();
       console.log('token: ', token);
-      loginUserBackend(token);
+      await loginUserBackend(token);
     }
 
     setUser(user);

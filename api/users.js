@@ -2,9 +2,8 @@ import axios from 'axios';
 import axiosRetry from 'axios-retry';
 axiosRetry(axios, {retries: 3});
 import CookieManager from '@react-native-cookies/cookies';
-
-const baseUrl = 'https://5049-190-114-57-42.ngrok.io';
-
+import {BASE_URL_API} from '@env';
+const baseUrl = BASE_URL_API;
 export async function registerUser(
   firebaseUID,
   username,
@@ -54,7 +53,7 @@ export async function loginUserBackend(token) {
       console.log('created???');
       CookieManager.set(baseUrl, {
         name: 'authToken',
-        value: response.data.data.token,
+        value: response.data.access_token,
       }).then(done => {
         console.log('CookieManager.set =>', done);
       });

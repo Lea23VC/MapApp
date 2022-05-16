@@ -36,6 +36,12 @@ import firestore from '@react-native-firebase/firestore';
 
 import Geocode from 'react-geocode';
 
+import CookieManager from '@react-native-cookies/cookies';
+
+import {BASE_URL_API} from '@env';
+
+import {getMarkers} from '../api/markers';
+
 const {width, height} = Dimensions.get('window');
 const CARD_HEIGHT = 220;
 const CARD_WIDTH = width * 0.8;
@@ -62,7 +68,8 @@ firestore()
   });
 
 export default function App({route, navigation}) {
-  console.log('route inside mainMap: ', route.params);
+  // console.log('route inside mainMap: ', route.params);
+
   const initialState = {
     latitude: null,
     longitude: null,
@@ -84,6 +91,7 @@ export default function App({route, navigation}) {
       isMounted = false;
     };
   }, []);
+
   // set Google Maps Geocoding API for purposes of quota management. Its optional but recommended.
   Geocode.setApiKey('AIzaSyBCvtHhm7gF4jLVoNQtXuCWKL5-JrdtyUg');
 
@@ -112,6 +120,21 @@ export default function App({route, navigation}) {
   const [modalVisible, setModalVisible] = useState(false);
 
   const [markers, setMarkers] = useState([]);
+
+  useEffect(() => {
+    async function fetchMarkers() {
+      console.log('inside fetch markers: ');
+      const authToken = await CookieManager.get(BASE_URL_API).then(cookies => {
+        console.log('CookieManager.get => ', +cookies);
+        console.log('No cookies??: ', cookies.authToken.value);
+        setMarkers(getMarkers(cookies.authToken.value));
+        // console.log('a after get Markers: ', a);
+      });
+    }
+    fetchMarkers();
+  }, []);
+
+  console.log('markers from backend: ', markers);
   const [modalMarkers, setModalMarkers] = useState(null);
 
   const [currentPosition, setCurrentPosition] = useState(initialState);
@@ -301,7 +324,7 @@ export default function App({route, navigation}) {
     }
   }
 
-  return currentPosition.latitude && address ? (
+  return currentPosition.latitude && address && markers.length > 0 ? (
     <View>
       <MapView
         showsMyLocationButton={true}
