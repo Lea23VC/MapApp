@@ -22,6 +22,8 @@ import ImagePicker from 'react-native-image-crop-picker';
 
 import storage from '@react-native-firebase/storage';
 
+import {setMarker} from '../../api/markers';
+
 import Geocode from 'react-geocode';
 
 // set Google Maps Geocoding API for purposes of quota management. Its optional but recommended.
@@ -90,117 +92,144 @@ export default function ModalMap({navigation, route}) {
   console.log(route.params);
   async function addMarker() {
     setAddingMarker(true);
-    let imgUrl = await uploadImage();
-    if (!imgUrl) {
+
+    console.log('image point: ', imagePoint);
+    if (!imagePoint) {
       alert('Porfavor, suba una foto');
       setAddingMarker(false);
       return;
     }
 
-    var address = await Geocode.fromLatLng(
-      route.params.currentPosition.latitude,
-      route.params.currentPosition.longitude,
-    ).then(
-      response => {
-        // const address = response.results[0].formatted_address;
-        let city, grandCity, state, country, address_street, address_number;
-        for (
-          let i = 0;
-          i < response.results[0].address_components.length;
-          i++
-        ) {
-          for (
-            let j = 0;
-            j < response.results[0].address_components[i].types.length;
-            j++
-          ) {
-            switch (response.results[0].address_components[i].types[j]) {
-              case 'street_number':
-                address_number =
-                  response.results[0].address_components[i].long_name;
-                break;
-              case 'route':
-                address_street =
-                  response.results[0].address_components[i].long_name;
-                break;
-              case 'locality':
-                city = response.results[0].address_components[i].long_name;
-                break;
-              case 'administrative_area_level_2':
-                grandCity = response.results[0].address_components[i].long_name;
-                break;
-              case 'administrative_area_level_1':
-                state = response.results[0].address_components[i].long_name;
-                break;
-              case 'country':
-                country = response.results[0].address_components[i].long_name;
-                break;
-            }
-          }
-        }
-        console.log(response.results[0].address_components);
-        var address_data = {
-          address_street: address_street,
-          address_number: address_number,
-          commune: city,
-          city: grandCity,
-          state: state,
-          country: country,
-        };
-        console.log('aaaa 56: ', address_data);
-        // setAddress(address_data);
-        return address_data;
-      },
-      error => {
-        console.error(error);
-        return null;
-      },
-    );
+    const formData = new FormData();
+    formData.append('image', {
+      uri: imagePoint,
+      type: 'image/jpeg',
+      name: imagePoint,
+    });
 
-    // if (imgUrl == null && userData.userImg) {
-    //   imgUrl = userData.userImg;
-    // }
+    formData.append('userId', 1);
+    formData.append('title', name);
+    formData.append('latitude', route.params.currentPosition.latitude);
+    formData.append('longitude', route.params.currentPosition.longitude);
+    formData.append('PE', PE ? 1 : 0);
+    formData.append('PET', PET ? 1 : 0);
+    formData.append('PVC', PVC ? 1 : 0);
+    formData.append('aluminium', aluminium ? 1 : 0);
+    formData.append('batteries', batteries ? 1 : 0);
+    formData.append('cellphones', cellphones ? 1 : 0);
+    formData.append('glass', glass ? 1 : 0);
+    formData.append('oil', oil ? 1 : 0);
+    formData.append('otherPapers', otherPapers ? 1 : 0);
+    formData.append('otherPlastics', otherPlastics ? 1 : 0);
+    formData.append('paper', paper ? 1 : 0);
+    formData.append('tetra', tetra ? 1 : 0);
 
-    console.log(route.params.currentPosition);
-    // console.log('modal console log: ', route.params.currentPosition);
+    setMarker(formData);
 
-    // console.log(address);
-    var recyclableMaterials = {
-      PET: PET,
-      PE: PE,
-      PVC: PVC,
-      aluminium: aluminium,
-      cardboard: cardboard,
-      glass: glass,
-      paper: paper,
-      otherPapers: otherPapers,
-      otherPlastics: otherPlastics,
-      tetra: tetra,
-      cellphones: cellphones,
-      batteries: batteries,
-      oil: oil,
-    };
+    // var address = await Geocode.fromLatLng(
+    //   route.params.currentPosition.latitude,
+    //   route.params.currentPosition.longitude,
+    // ).then(
+    //   response => {
+    //     // const address = response.results[0].formatted_address;
+    //     let city, grandCity, state, country, address_street, address_number;
+    //     for (
+    //       let i = 0;
+    //       i < response.results[0].address_components.length;
+    //       i++
+    //     ) {
+    //       for (
+    //         let j = 0;
+    //         j < response.results[0].address_components[i].types.length;
+    //         j++
+    //       ) {
+    //         switch (response.results[0].address_components[i].types[j]) {
+    //           case 'street_number':
+    //             address_number =
+    //               response.results[0].address_components[i].long_name;
+    //             break;
+    //           case 'route':
+    //             address_street =
+    //               response.results[0].address_components[i].long_name;
+    //             break;
+    //           case 'locality':
+    //             city = response.results[0].address_components[i].long_name;
+    //             break;
+    //           case 'administrative_area_level_2':
+    //             grandCity = response.results[0].address_components[i].long_name;
+    //             break;
+    //           case 'administrative_area_level_1':
+    //             state = response.results[0].address_components[i].long_name;
+    //             break;
+    //           case 'country':
+    //             country = response.results[0].address_components[i].long_name;
+    //             break;
+    //         }
+    //       }
+    //     }
+    //     console.log(response.results[0].address_components);
+    //     var address_data = {
+    //       address_street: address_street,
+    //       address_number: address_number,
+    //       commune: city,
+    //       city: grandCity,
+    //       state: state,
+    //       country: country,
+    //     };
+    //     console.log('aaaa 56: ', address_data);
+    //     // setAddress(address_data);
+    //     return address_data;
+    //   },
+    //   error => {
+    //     console.error(error);
+    //     return null;
+    //   },
+    // );
 
-    onChangeName(null);
+    // // if (imgUrl == null && userData.userImg) {
+    // //   imgUrl = userData.userImg;
+    // // }
 
-    firestore()
-      .collection('Maps')
-      .add({
-        latlng: route.params.currentPosition,
-        address: address,
-        title: name,
-        createdAt: firestore.FieldValue.serverTimestamp(),
-        recyclableMaterials: recyclableMaterials,
-        user: {
-          uid: route.params.user.data().uid,
-          username: route.params.user.data().username,
-        },
-        imgUrl: imgUrl,
-        votes: 0,
-      })
-      .then(() => {
-        console.log('Map added!');
-      });
+    // console.log(route.params.currentPosition);
+    // // console.log('modal console log: ', route.params.currentPosition);
+
+    // // console.log(address);
+    // var recyclableMaterials = {
+    //   PET: PET,
+    //   PE: PE,
+    //   PVC: PVC,
+    //   aluminium: aluminium,
+    //   cardboard: cardboard,
+    //   glass: glass,
+    //   paper: paper,
+    //   otherPapers: otherPapers,
+    //   otherPlastics: otherPlastics,
+    //   tetra: tetra,
+    //   cellphones: cellphones,
+    //   batteries: batteries,
+    //   oil: oil,
+    // };
+
+    // onChangeName(null);
+
+    // firestore()
+    //   .collection('Maps')
+    //   .add({
+    //     latlng: route.params.currentPosition,
+    //     address: address,
+    //     title: name,
+    //     createdAt: firestore.FieldValue.serverTimestamp(),
+    //     recyclableMaterials: recyclableMaterials,
+    //     user: {
+    //       uid: route.params.user.data().uid,
+    //       username: route.params.user.data().username,
+    //     },
+    //     imgUrl: imgUrl,
+    //     votes: 0,
+    //   })
+    //   .then(() => {
+    //     console.log('Map added!');
+    //   });
     // props.setModalVisible(!props.modalVisible);
     setPET(false);
     setPE(false);
@@ -236,36 +265,36 @@ export default function ModalMap({navigation, route}) {
     setUploading(true);
     setTransferred(0);
 
-    const storageRef = storage().ref(`photos/${filename}`);
-    const task = storageRef.putFile(uploadUri);
+    // const storageRef = storage().ref(`photos/${filename}`);
+    // const task = storageRef.putFile(uploadUri);
 
     // Set transferred state
-    task.on('state_changed', taskSnapshot => {
-      console.log(
-        `${taskSnapshot.bytesTransferred} transferred out of ${taskSnapshot.totalBytes}`,
-      );
+    // task.on('state_changed', taskSnapshot => {
+    //   console.log(
+    //     `${taskSnapshot.bytesTransferred} transferred out of ${taskSnapshot.totalBytes}`,
+    //   );
 
-      setTransferred(
-        Math.round(taskSnapshot.bytesTransferred / taskSnapshot.totalBytes) *
-          100,
-      );
-    });
+    //   setTransferred(
+    //     Math.round(taskSnapshot.bytesTransferred / taskSnapshot.totalBytes) *
+    //       100,
+    //   );
+    // });
 
-    try {
-      await task;
-      const url = await storageRef.getDownloadURL();
-      setUploading(false);
-      setImagePoint(null);
+    // try {
+    //   await task;
+    //   const url = await storageRef.getDownloadURL();
+    //   setUploading(false);
+    //   setImagePoint(null);
 
-      // Alert.alert(
-      //   'Image uploaded!',
-      //   'Your image has been uploaded to the Firebase Cloud Storage Successfully!',
-      // );
-      return url;
-    } catch (e) {
-      console.log(e);
-      return null;
-    }
+    //   // Alert.alert(
+    //   //   'Image uploaded!',
+    //   //   'Your image has been uploaded to the Firebase Cloud Storage Successfully!',
+    //   // );
+    //   return url;
+    // } catch (e) {
+    //   console.log(e);
+    //   return null;
+    // }
   };
 
   const takePhotoFromCamera = () => {
@@ -290,7 +319,7 @@ export default function ModalMap({navigation, route}) {
       cropping: true,
       compressImageQuality: 0.7,
     }).then(image => {
-      console.log(image);
+      console.log('console image log: ', image);
       const imageUri = Platform.OS === 'ios' ? image.sourceURL : image.path;
       setImagePoint(imageUri);
       console.log(imagePoint);

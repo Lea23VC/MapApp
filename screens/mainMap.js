@@ -1,4 +1,4 @@
-import React, {Component, useState, setState, useEffect} from 'react';
+import React, {useState, setState, useEffect, useCallback} from 'react';
 import {
   StyleSheet,
   Text,
@@ -16,6 +16,7 @@ import {
   ScrollView,
 } from 'react-native';
 import MapView, {Marker, Callout, AnimatedRegion} from 'react-native-maps';
+import {useFocusEffect} from '@react-navigation/native';
 
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -27,9 +28,12 @@ import {
   Button,
   ActivityIndicator,
   Colors,
+  Provider,
 } from 'react-native-paper';
 import {Svg, Image as ImageSvg} from 'react-native-svg';
 import Geolocation from 'react-native-geolocation-service';
+
+import MarkerModalContent from '../components/modals/MarkerModalContent';
 
 import ModalMap from '../components/map/modalMap.js';
 import firestore from '@react-native-firebase/firestore';
@@ -40,7 +44,7 @@ import CookieManager from '@react-native-cookies/cookies';
 
 import {BASE_URL_API} from '@env';
 
-import {getMarkers} from '../api/markers';
+import {getMarkers, getMarker} from '../api/markers';
 
 const {width, height} = Dimensions.get('window');
 const CARD_HEIGHT = 220;
@@ -63,9 +67,30 @@ firestore()
 
       return data;
     });
-    console.log('B: ', b);
+    // console.log('B: ', b);
     // querySnapshot.forEach(snapshot => {});
   });
+
+// set Google Maps Geocoding API for purposes of quota management. Its optional but recommended.
+Geocode.setApiKey('AIzaSyBCvtHhm7gF4jLVoNQtXuCWKL5-JrdtyUg');
+
+// set response language. Defaults to english.
+Geocode.setLanguage('es');
+
+// set response region. Its optional.
+// A Geocoding request with region=es (Spain) will return the Spanish city.
+Geocode.setRegion('cl');
+
+// set location_type filter . Its optional.
+// google geocoder returns more that one address for given lat/lng.
+// In some case we need one address as response for which google itself provides a location_type filter.
+// So we can easily parse the result for fetching address components
+// ROOFTOP, RANGE_INTERPOLATED, GEOMETRIC_CENTER, APPROXIMATE are the accepted values.
+// And according to the below google docs in description, ROOFTOP param returns the most accurate result.
+Geocode.setLocationType('ROOFTOP');
+
+// Enable or disable logs. Its optional.
+Geocode.enableDebug();
 
 export default function App({route, navigation}) {
   // console.log('route inside mainMap: ', route.params);
@@ -84,34 +109,13 @@ export default function App({route, navigation}) {
       PermissionsAndroid.PERMISSIONS.ACCESS_BACKGROUND_LOCATION,
     );
   };
-  useEffect(() => {
-    permission();
 
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  // set Google Maps Geocoding API for purposes of quota management. Its optional but recommended.
-  Geocode.setApiKey('AIzaSyBCvtHhm7gF4jLVoNQtXuCWKL5-JrdtyUg');
-
-  // set response language. Defaults to english.
-  Geocode.setLanguage('es');
-
-  // set response region. Its optional.
-  // A Geocoding request with region=es (Spain) will return the Spanish city.
-  Geocode.setRegion('cl');
-
-  // set location_type filter . Its optional.
-  // google geocoder returns more that one address for given lat/lng.
-  // In some case we need one address as response for which google itself provides a location_type filter.
-  // So we can easily parse the result for fetching address components
-  // ROOFTOP, RANGE_INTERPOLATED, GEOMETRIC_CENTER, APPROXIMATE are the accepted values.
-  // And according to the below google docs in description, ROOFTOP param returns the most accurate result.
-  Geocode.setLocationType('ROOFTOP');
-
-  // Enable or disable logs. Its optional.
-  Geocode.enableDebug();
+  // useFocusEffect(
+  //   useCallback(() => {
+  //     const subscriber = permission();
+  //     return subscriber; // unsubscribe on unmount
+  //   }, []),
+  // );
 
   // console.log('actual user: ', props.user.data().username);
   let mapAnimation = new Animated.Value(0);
@@ -119,23 +123,43 @@ export default function App({route, navigation}) {
   // console.log('params: ', props.user);
   const [modalVisible, setModalVisible] = useState(false);
 
+  function showModal(id) {
+    setModalVisible(true);
+    getMarkerbyId(id);
+  }
+
+  const hideModal = () => {
+    setModalVisible(false);
+    setModalMarker(null);
+  };
+
   const [markers, setMarkers] = useState([]);
 
-  useEffect(() => {
-    async function fetchMarkers() {
-      console.log('inside fetch markers: ');
-      const authToken = await CookieManager.get(BASE_URL_API).then(cookies => {
-        console.log('CookieManager.get => ', +cookies);
-        console.log('No cookies??: ', cookies.authToken.value);
-        setMarkers(getMarkers(cookies.authToken.value));
-        // console.log('a after get Markers: ', a);
-      });
-    }
-    fetchMarkers();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
 
-  console.log('markers from backend: ', markers);
-  const [modalMarkers, setModalMarkers] = useState(null);
+      async function fetchMarkers() {
+        console.log('inside fetch markers: ');
+        const cookies = await CookieManager.get(BASE_URL_API);
+        console.log('cookies aaaa: ', cookies);
+        const data_makers = await getMarkers(cookies.authToken.value, params);
+        if (isActive) {
+          setMarkers(data_makers);
+        }
+      }
+
+      fetchMarkers();
+
+      return () => {
+        isActive = false;
+      };
+    }, []),
+  );
+
+  // console.log('markers from backend: ', markers);
+
+  const [modalMarker, setModalMarker] = useState(null);
 
   const [currentPosition, setCurrentPosition] = useState(initialState);
 
@@ -144,10 +168,105 @@ export default function App({route, navigation}) {
   const [address, setAddress] = useState(null);
 
   const [editMarkerButton, setEditMarkerButton] = useState(false);
+  const [params, setParams] = useState({items_per_page: 99});
+
+  const [PET, setPET] = useState(null);
+  const [PE, setPE] = useState(null);
+  const [PVC, setPVC] = useState(null);
+  const [aluminium, setAluminium] = useState(null);
+  const [cardboard, setCardboard] = React.useState(null);
+  const [glass, setGlass] = React.useState(null);
+  const [paper, setPaper] = React.useState(null);
+  const [otherPapers, setOtherPapers] = React.useState(null);
+  const [otherPlastics, setOtherPlastics] = React.useState(null);
+  const [tetra, setTetra] = React.useState(null);
+  const [cellphones, setCellphones] = React.useState(null);
+  const [batteries, setBatteries] = React.useState(null);
+  const [oil, setOil] = React.useState(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+
+      const fetchUser = async () => {
+        try {
+          if (isActive) {
+            setQuery();
+            console.log('set markers i guesss');
+          }
+        } catch (e) {
+          console.log('Handle error WIP');
+        }
+      };
+
+      fetchUser();
+
+      return () => {
+        isActive = false;
+      };
+    }, [
+      PET,
+      PVC,
+      PE,
+      aluminium,
+      cardboard,
+      glass,
+      paper,
+      otherPapers,
+      otherPlastics,
+      tetra,
+      cellphones,
+      batteries,
+      oil,
+    ]),
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+
+      const fetchUser = async () => {
+        try {
+          const cookies = await CookieManager.get(BASE_URL_API);
+          getMarkers(cookies.authToken.value, params);
+
+          if (isActive) {
+            console.log('set markers i guesss');
+          }
+        } catch (e) {
+          console.log('Handle error WIP');
+        }
+      };
+
+      fetchUser();
+
+      return () => {
+        isActive = false;
+      };
+    }, [params]),
+  );
+
+  async function getMarkerbyId(id) {
+    const cookies = await CookieManager.get(BASE_URL_API);
+    setModalMarker(await getMarker(cookies.authToken.value, id));
+  }
+
+  async function getMarkersWithMaterial(value, valueChange) {
+    console.log('Material: ', value);
+    console.log('Params??: ', params);
+    if (value == null) {
+      valueChange(1);
+    } else {
+      valueChange(null);
+    }
+  }
 
   const categories = [
     {
       name: 'PET',
+      filter_name: 'PET',
+      value: PET,
+      valueChange: setPET,
       icon: (
         <MaterialCommunityIcons
           style={styles.chipsIcon}
@@ -158,18 +277,27 @@ export default function App({route, navigation}) {
     },
     {
       name: 'PE',
+      filter_name: 'PET',
+      value: PE,
+      valueChange: setPE,
       icon: (
         <Ionicons name="ios-restaurant" style={styles.chipsIcon} size={18} />
       ),
     },
     {
       name: 'Aluminio',
+      filter_name: 'aluminium',
+      value: aluminium,
+      valueChange: setAluminium,
       icon: (
         <Ionicons name="md-restaurant" style={styles.chipsIcon} size={18} />
       ),
     },
     {
       name: 'Carton',
+      filter_name: 'cardboard',
+      value: cardboard,
+      valueChange: setCardboard,
       icon: (
         <MaterialCommunityIcons
           name="food"
@@ -180,121 +308,199 @@ export default function App({route, navigation}) {
     },
     {
       name: 'Vidrio',
+      filter_name: 'glass',
+      value: glass,
+      valueChange: setGlass,
       icon: <Fontisto name="hotel" style={styles.chipsIcon} size={15} />,
     },
     {
       name: 'Papel',
+      filter_name: 'paper',
+      value: paper,
+      valueChange: setPaper,
       icon: <Fontisto name="hotel" style={styles.chipsIcon} size={15} />,
     },
     {
       name: 'Otros Papeles',
+      filter_name: 'otherPapers',
+      value: otherPapers,
+      valueChange: setOtherPapers,
       icon: <Fontisto name="hotel" style={styles.chipsIcon} size={15} />,
     },
     {
       name: 'Otros Plasticos',
+      filter_name: 'otherPlastics',
+      value: otherPlastics,
+      valueChange: setOtherPlastics,
       icon: <Fontisto name="hotel" style={styles.chipsIcon} size={15} />,
     },
     {
       name: 'Cajas Tetras',
+      filter_name: 'tetra',
+      value: tetra,
+      valueChange: setTetra,
       icon: <Fontisto name="hotel" style={styles.chipsIcon} size={15} />,
     },
     {
       name: 'Celulares',
+      filter_name: 'cellphones',
+      value: cellphones,
+      valueChange: setCellphones,
       icon: <Fontisto name="hotel" style={styles.chipsIcon} size={15} />,
     },
     {
       name: 'Pilas y Baterias',
+      filter_name: 'batteries',
+      value: batteries,
+      valueChange: setBatteries,
       icon: <Fontisto name="hotel" style={styles.chipsIcon} size={15} />,
     },
     {
       name: 'Aceite',
+      filter_name: 'oil',
+      value: oil,
+      value: setOil,
       icon: <Fontisto name="hotel" style={styles.chipsIcon} size={15} />,
     },
   ];
 
   //console.log(usersCollection);
-  if (currentPosition.latitude && !address) {
-    Geocode.fromLatLng(
-      currentPosition.latitude,
-      currentPosition.longitude,
-    ).then(
-      response => {
-        // const address = response.results[0].formatted_address;
-        let city, grandCity, state, country, address_street, address_number;
-        for (
-          let i = 0;
-          i < response.results[0].address_components.length;
-          i++
-        ) {
+
+  async function setQuery() {
+    const query = {
+      items_per_page: 99,
+      PET: PET,
+      PE: PE,
+      PVC: PVC,
+      aluminium: aluminium,
+      batteries: batteries,
+      cardboard: cardboard,
+      cellphones: cellphones,
+      glass: glass,
+      oil: oil,
+      otherPlastics: otherPlastics,
+      otherPapers: otherPapers,
+      paper: paper,
+      tetra: tetra,
+    };
+
+    setParams(query);
+  }
+
+  async function getAddressFromCoords() {
+    if (currentPosition.latitude) {
+      // console.log('current position ???: ', currentPosition);
+      Geocode.fromLatLng(
+        currentPosition.latitude,
+        currentPosition.longitude,
+      ).then(
+        response => {
+          // const address = response.results[0].formatted_address;
+          let city, grandCity, state, country, address_street, address_number;
           for (
-            let j = 0;
-            j < response.results[0].address_components[i].types.length;
-            j++
+            let i = 0;
+            i < response.results[0].address_components.length;
+            i++
           ) {
-            switch (response.results[0].address_components[i].types[j]) {
-              case 'street_number':
-                address_number =
-                  response.results[0].address_components[i].long_name;
-                break;
-              case 'route':
-                address_street =
-                  response.results[0].address_components[i].long_name;
-                break;
-              case 'locality':
-                city = response.results[0].address_components[i].long_name;
-                break;
-              case 'administrative_area_level_2':
-                grandCity = response.results[0].address_components[i].long_name;
-                break;
-              case 'administrative_area_level_1':
-                state = response.results[0].address_components[i].long_name;
-                break;
-              case 'country':
-                country = response.results[0].address_components[i].long_name;
-                break;
+            for (
+              let j = 0;
+              j < response.results[0].address_components[i].types.length;
+              j++
+            ) {
+              switch (response.results[0].address_components[i].types[j]) {
+                case 'street_number':
+                  address_number =
+                    response.results[0].address_components[i].long_name;
+                  break;
+                case 'route':
+                  address_street =
+                    response.results[0].address_components[i].long_name;
+                  break;
+                case 'locality':
+                  city = response.results[0].address_components[i].long_name;
+                  break;
+                case 'administrative_area_level_2':
+                  grandCity =
+                    response.results[0].address_components[i].long_name;
+                  break;
+                case 'administrative_area_level_1':
+                  state = response.results[0].address_components[i].long_name;
+                  break;
+                case 'country':
+                  country = response.results[0].address_components[i].long_name;
+                  break;
+              }
             }
           }
-        }
-        console.log(response.results[0].address_components);
-        var address_data = {
-          address_street: address_street,
-          address_number: address_number,
-          commune: city,
-          city: grandCity,
-          state: state,
-          country: country,
-        };
-        console.log('aaaa 56: ', address_data);
-        setAddress(address_data);
-        return address_data;
+          // console.log(response.results[0].address_components);
+          var address_data = {
+            address_street: address_street,
+            address_number: address_number,
+            commune: city,
+            city: grandCity,
+            state: state,
+            country: country,
+          };
+          // console.log('aaaa 56: ', address_data);
+          setAddress(address_data);
+          return address_data;
+        },
+        error => {
+          console.error(error);
+          return null;
+        },
+      );
+    }
+  }
+
+  useFocusEffect(
+    useCallback(() => {
+      const unsubscribe = getAddressFromCoords;
+      return () => unsubscribe();
+    }, [currentPosition]),
+  );
+
+  function getCurrentPositionService() {
+    // console.log('estoy chato 2');
+
+    Geolocation.getCurrentPosition(
+      position => {
+        console.log('inide geolocation get current');
+        const {longitude, latitude} = position.coords;
+        setCurrentPosition({
+          ...currentPosition,
+          latitude,
+          longitude,
+        });
+        // console.log(
+        //   'current position inide geolocation get current??: ',
+        //   currentPosition,
+        // );
       },
-      error => {
-        console.error(error);
-        return null;
+
+      error => alert(error.message),
+      {
+        timeout: 20000,
+        maximumAge: 5000,
+        enableHighAccuracy: true,
       },
     );
   }
+  // useFocusEffect(
+  //   useCallback(() => {
+  //     console.log('estoy chato');
+  //     const unsubscribe2 = getCurrentPositionService;
+  //     return () => unsubscribe2();
+  //   }, [currentPosition]),
+  // );
 
+  useFocusEffect(
+    useCallback(() => {
+      getCurrentPositionService();
+    }, []),
+  );
   const _map = React.useRef(null);
   const _scrollView = React.useRef(null);
-
-  Geolocation.getCurrentPosition(
-    position => {
-      const {longitude, latitude} = position.coords;
-      setCurrentPosition({
-        ...currentPosition,
-        latitude,
-        longitude,
-      });
-    },
-
-    error => alert(error.message),
-    {
-      timeout: 20000,
-      maximumAge: 5000,
-      enableHighAccuracy: true,
-    },
-  );
 
   function addMarkerPosition(cords) {
     setMarkerPosition(cords);
@@ -324,80 +530,27 @@ export default function App({route, navigation}) {
     }
   }
 
-  return currentPosition.latitude && address && markers.length > 0 ? (
+  return currentPosition.latitude && markers.length > 0 ? (
     <View>
       <MapView
+        ref={mapView => {
+          this.map = mapView;
+        }}
         showsMyLocationButton={true}
         showsUserLocation
         followsUserLocation
         style={styles.map}
         region={markerPosition}
         initialRegion={currentPosition}>
-        {b.map((marker, i) => (
+        {markers.map((marker, i) => (
           <Marker
+            onPress={() => showModal(marker.id)}
             key={i}
-            coordinate={marker.latlng}
-            title={marker.title ? marker.title : 'placeholder'}>
-            <Callout tooltip onPress={() => editMarker(marker)}>
-              <View style={styles.markerCallout}>
-                <Text>
-                  <Svg width={CARD_WIDTH} height={120}>
-                    <ImageSvg
-                      href={{uri: marker.imgUrl}}
-                      width={'100%'}
-                      height={'100%'}
-                      preserveAspectRatio="xMidYMid slice"
-                      resizeMode="cover"
-                    />
-                  </Svg>
-                </Text>
-                <View style={styles.textContent}>
-                  <Text numberOfLines={1} style={styles.cardtitle}>
-                    Usuario: {marker.user.username}
-                  </Text>
-
-                  {route.params.user.uid == marker.user.uid && (
-                    <View style={styles.editMarker}>
-                      <Button
-                        mode="outlined"
-                        style={[styles.button, styles.buttonClose]}
-                        onPress={() => addMarker()}>
-                        <Text>Agregar sitio</Text>
-                      </Button>
-                    </View>
-                  )}
-
-                  <Text>{marker.title}</Text>
-
-                  {/* <StarRating ratings={marker.rating} reviews={marker.reviews} /> */}
-                  {/* <Text numberOfLines={1} style={styles.cardDescription}>
-                {marker.description}
-              </Text> */}
-                  {/* <View style={styles.button}>
-                <TouchableOpacity
-                  onPress={() => {}}
-                  style={[
-                    styles.signIn,
-                    {
-                      borderColor: '#FF6347',
-                      borderWidth: 1,
-                    },
-                  ]}>
-                  <Text
-                    style={[
-                      styles.textSign,
-                      {
-                        color: '#FF6347',
-                      },
-                    ]}>
-                    Order Now
-                  </Text>
-                </TouchableOpacity>
-              </View> */}
-                </View>
-              </View>
-            </Callout>
-          </Marker>
+            coordinate={{
+              latitude: marker.latitude,
+              longitude: marker.longitude,
+            }}
+            title={marker.title ? marker.title : 'placeholder'}></Marker>
         ))}
 
         <Marker
@@ -421,6 +574,26 @@ export default function App({route, navigation}) {
         <Ionicons name="ios-search" size={20} />
       </KeyboardAvoidingView>
 
+      <View style={{alignItems: 'center', justifyContent: 'center'}}>
+        <View>
+          <Portal>
+            <Modal
+              visible={modalVisible}
+              onDismiss={hideModal}
+              contentContainerStyle={styles.modalStyle}>
+              {modalMarker ? (
+                <MarkerModalContent marker={modalMarker} />
+              ) : (
+                <ActivityIndicator
+                  style={{flex: 1}}
+                  animating={true}
+                  color={Colors.red800}
+                />
+              )}
+            </Modal>
+          </Portal>
+        </View>
+      </View>
       <View style={styles.addMarker}>
         <Button
           mode="outlined"
@@ -447,9 +620,16 @@ export default function App({route, navigation}) {
           paddingRight: Platform.OS === 'android' ? 20 : 0,
         }}>
         {categories.map((category, index) => (
-          <TouchableOpacity key={index} style={styles.chipsItem}>
+          <TouchableOpacity
+            key={index}
+            style={[styles.chipsItem, category.value ? styles.selected : {}]}
+            onPress={() =>
+              getMarkersWithMaterial(category.value, category.valueChange)
+            }>
             {/* {category.icon} */}
-            <Text>{category.name}</Text>
+            <Text style={[category.value && styles.selectedText]}>
+              {category.name}
+            </Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -484,12 +664,20 @@ export default function App({route, navigation}) {
           ],
           {useNativeDriver: true},
         )}>
-        {b.map(
+        {markers.map(
           (marker, index) =>
-            marker.address.commune == address.commune && (
+            marker.address && (
               <Pressable
                 key={index}
-                onPress={async () => addMarkerPosition(marker.latlng)}
+                onPress={() =>
+                  this.map.animateCamera({
+                    center: {
+                      latitude: marker.latitude,
+                      longitude: marker.longitude,
+                    },
+                    heading: 0,
+                  })
+                }
                 title="Agregar sitio"
                 style={styles.button}
                 accessibilityLabel="Learn more about this purple button">
@@ -497,7 +685,7 @@ export default function App({route, navigation}) {
                   <Text style={styles.textStyle}>Agregar sitio</Text>
 
                   <Image
-                    source={{uri: marker.imgUrl}}
+                    source={{uri: marker.imgURL}}
                     style={styles.cardImage}
                     resizeMode="cover"
                   />
@@ -505,95 +693,13 @@ export default function App({route, navigation}) {
                     <Text numberOfLines={1} style={styles.cardtitle}>
                       {marker.title}
                     </Text>
-
-                    {/* <StarRating ratings={marker.rating} reviews={marker.reviews} /> */}
-                    {/* <Text numberOfLines={1} style={styles.cardDescription}>
-                {marker.description}
-              </Text> */}
-                    {/* <View style={styles.button}>
-                <TouchableOpacity
-                  onPress={() => {}}
-                  style={[
-                    styles.signIn,
-                    {
-                      borderColor: '#FF6347',
-                      borderWidth: 1,
-                    },
-                  ]}>
-                  <Text
-                    style={[
-                      styles.textSign,
-                      {
-                        color: '#FF6347',
-                      },
-                    ]}>
-                    Order Now
-                  </Text>
-                </TouchableOpacity>
-              </View> */}
                   </View>
                 </View>
               </Pressable>
             ),
         )}
       </Animated.ScrollView>
-      {/* <View style={styles.viewButtons}>
-        <Text>Probando 1 2 3</Text>
 
-        <Text>
-          {currentPosition.latitude !== 0
-            ? `Latitud: ${currentPosition.latitude}`
-            : 'Latitud: ...'}
-        </Text>
-
-        <Text>
-          {currentPosition.longitude !== 0
-            ? `Longitud: ${currentPosition.longitude}`
-            : 'Longitud: ...'}
-        </Text>
-
-        <Pressable
-          onPress={() =>
-            props.navigation.navigate('AddMarker', {
-              setMarkers: setMarkers,
-              markers: markers,
-              currentPosition: currentPosition,
-              user: props.user,
-            })
-          }
-          title="Agregar sitio"
-          style={styles.button}
-          accessibilityLabel="Learn more about this purple button">
-          <Text style={styles.textStyle}>Agregar sitio</Text>
-        </Pressable>
-      </View> */}
-
-      {/* <TouchableOpacity
-        onPress={() =>
-          props.navigation.navigate('AddMarker', {
-            setMarkers: setMarkers,
-            markers: markers,
-            currentPosition: currentPosition,
-            user: props.user,
-          })
-        }
-        style={[
-          styles.signIn,
-          {
-            borderColor: '#FF6347',
-            borderWidth: 1,
-          },
-        ]}>
-        <Text
-          style={[
-            styles.textSign,
-            {
-              color: '#FF6347',
-            },
-          ]}>
-          Order Now
-        </Text>
-      </TouchableOpacity> */}
       {editMarkerButton && (
         <View style={styles.editMarker}>
           <Button
@@ -614,6 +720,13 @@ export default function App({route, navigation}) {
   );
 }
 const styles = StyleSheet.create({
+  selected: {
+    backgroundColor: 'black',
+  },
+  selectedText: {
+    color: 'white',
+  },
+
   container: {
     flex: 1,
     backgroundColor: '#fff',
@@ -841,5 +954,12 @@ const styles = StyleSheet.create({
   activity: {
     justifyContent: 'center',
     alignItems: 'center',
+  },
+
+  modalStyle: {
+    backgroundColor: 'white',
+    padding: 10,
+    width: '80%',
+    borderRadius: 15,
   },
 });

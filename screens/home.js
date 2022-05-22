@@ -1,4 +1,6 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
+import {useFocusEffect} from '@react-navigation/native';
+
 import {View, Text, Pressable, StyleSheet} from 'react-native';
 import auth from '@react-native-firebase/auth';
 import {Button, TextInput, HelperText} from 'react-native-paper';
@@ -105,10 +107,12 @@ export default function App({navigation}) {
     navigation.navigate('Profile', {userId: user.uid});
   }
 
-  useEffect(() => {
-    const subscriber = auth().onAuthStateChanged(onAuthStateChanged);
-    return subscriber; // unsubscribe on unmount
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      const subscriber = auth().onAuthStateChanged(onAuthStateChanged);
+      return subscriber; // unsubscribe on unmount
+    }, []),
+  );
 
   if (initializing) return null;
 
