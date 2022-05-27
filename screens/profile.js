@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useContext} from 'react';
+import React, {useState, useEffect, useContext, useCallback} from 'react';
 import {
   View,
   Text,
@@ -10,9 +10,24 @@ import {
 } from 'react-native';
 // import FormButton from '../components/FormButton';
 // import {AuthContext} from '../navigation/AuthProvider';
+import CookieManager from '@react-native-cookies/cookies';
+import {BASE_URL_API} from '@env';
 
 import firestore from '@react-native-firebase/firestore';
 // import PostCard from '../components/PostCard';
+import {useFocusEffect} from '@react-navigation/native';
+
+import {getUser} from '../api/users';
+import {
+  Checkbox,
+  Modal,
+  Portal,
+  Button,
+  ActivityIndicator,
+  Colors,
+  Provider,
+} from 'react-native-paper';
+import auth from '@react-native-firebase/auth';
 
 export default function ProfileScreen({navigation, route}) {
   // const {user, logout} = useContext(AuthContext);
@@ -22,28 +37,46 @@ export default function ProfileScreen({navigation, route}) {
   const [deleted, setDeleted] = useState(false);
   const [userData, setUserData] = useState(null);
 
-  const getUser = async () => {
-    await firestore()
-      .collection('Users')
-      .doc(route.params ? route.params.userId : user.uid)
-      .get()
-      .then(documentSnapshot => {
-        if (documentSnapshot.exists) {
-          console.log('User Data', documentSnapshot.data());
-          setUserData(documentSnapshot.data());
-        }
-      });
-  };
+  console.log('user: ', user);
+  const [initializing, setInitializing] = useState(true);
+  const [user, setUser] = useState();
+
+  // Handle user state changes
+  function onAuthStateChanged(user) {
+    setUser(user);
+    if (initializing) setInitializing(false);
+  }
 
   useEffect(() => {
-    getUser();
-    // fetchPosts();
-    navigation.addListener('focus', () => setLoading(!loading));
-  }, [navigation, loading]);
+    const subscriber = auth().onAuthStateChanged(onAuthStateChanged);
+    return subscriber; // unsubscribe on unmount
+  }, []);
 
-  const handleDelete = () => {};
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
 
-  return (
+      async function fetchUserData() {
+        console.log('inside fetch markers: ');
+        const cookies = await CookieManager.get(BASE_URL_API);
+        console.log('cookies inside profile.js: ', cookies);
+        const data = await getUser(
+          cookies.authToken.value,
+          route.params.userId,
+        );
+        if (isActive) {
+          setUserData(data);
+        }
+      }
+      fetchUserData();
+
+      return () => {
+        isActive = false;
+      };
+    }, []),
+  );
+
+  return userData ? (
     <SafeAreaView style={{flex: 1, backgroundColor: '#fff'}}>
       <ScrollView
         style={styles.container}
@@ -53,24 +86,23 @@ export default function ProfileScreen({navigation, route}) {
           style={styles.userImg}
           source={{
             uri: userData
-              ? userData.userImg ||
+              ? userData.imgURL ||
                 'https://lh5.googleusercontent.com/-b0PKyNuQv5s/AAAAAAAAAAI/AAAAAAAAAAA/AMZuuclxAM4M1SCBGAO7Rp-QP6zgBEUkOQ/s96-c/photo.jpg'
               : 'https://lh5.googleusercontent.com/-b0PKyNuQv5s/AAAAAAAAAAI/AAAAAAAAAAA/AMZuuclxAM4M1SCBGAO7Rp-QP6zgBEUkOQ/s96-c/photo.jpg',
           }}
         />
-        {/* <Text style={styles.userName}>
-          {userData ? userData.fname || 'Test' : 'Test'}{' '}
-          {userData ? userData.lname || 'User' : 'User'}
-        </Text> */}
+
         <Text style={styles.userName}>
           {userData ? userData.username || '...' : '...'}
         </Text>
-        {/* <Text>{route.params ? route.params.userId : user.uid}</Text> */}
+        <Text>From params: {route.params.userAuth} </Text>
+        <Text>From ID: {userData.id} </Text>
+        <Text>From Firebase: {user.uid} </Text>
         <Text style={styles.aboutUser}>
           {userData ? userData.about || 'No details added.' : ''}
         </Text>
         <View style={styles.userBtnWrapper}>
-          {route.params ? (
+          {route.params.userAuth != userData.id ? (
             <>
               <TouchableOpacity style={styles.userBtn} onPress={() => {}}>
                 <Text style={styles.userBtnTxt}>Message</Text>
@@ -84,7 +116,9 @@ export default function ProfileScreen({navigation, route}) {
               <TouchableOpacity
                 style={styles.userBtn}
                 onPress={() => {
-                  navigation.navigate('EditProfile');
+                  navigation.navigate('Edit Profile', {
+                    userId: route.params.userId,
+                  });
                 }}>
                 <Text style={styles.userBtnTxt}>Edit</Text>
               </TouchableOpacity>
@@ -102,7 +136,7 @@ export default function ProfileScreen({navigation, route}) {
           </View> */}
           <View style={styles.userInfoItem}>
             <Text style={styles.userInfoTitle}>
-              {userData ? userData.points || 0 : 0}
+              {userData ? userData.votes : 0}
             </Text>
             <Text style={styles.userInfoSubTitle}>Puntos</Text>
           </View>
@@ -117,6 +151,12 @@ export default function ProfileScreen({navigation, route}) {
         ))} */}
       </ScrollView>
     </SafeAreaView>
+  ) : (
+    <ActivityIndicator
+      style={{flex: 1}}
+      animating={true}
+      color={Colors.red800}
+    />
   );
 }
 

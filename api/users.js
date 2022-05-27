@@ -39,7 +39,7 @@ export async function registerUser(
   }
 }
 
-export async function loginUserBackend(token) {
+export async function loginUserBackend(token, id) {
   console.log('inside Login function');
   try {
     let req = await axios({
@@ -48,9 +48,14 @@ export async function loginUserBackend(token) {
       data: {
         Firebasetoken: token,
       },
-    }).then(response => {
+    }).then(async response => {
       console.log('data: ', response.data);
       console.log('created???');
+
+      CookieManager.set(baseUrl, {
+        name: 'userId',
+        value: id,
+      });
       CookieManager.set(baseUrl, {
         name: 'authToken',
         value: response.data.access_token,
@@ -63,4 +68,50 @@ export async function loginUserBackend(token) {
 
     return error.response;
   }
+}
+
+export async function getUser(token, id, params = null) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let req = await axios({
+        method: 'get',
+        url: `${baseUrl}/api/users/${id}`,
+        params: params,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + token,
+        },
+      }).then(response => {
+        console.log('data from api markers: ', response);
+        resolve(response.data.data);
+      });
+    } catch (error) {
+      console.log(error.response); // this is the main part. Use the response property from the error object
+
+      reject(error.response);
+    }
+  });
+}
+
+export async function updateUser(token, id, data) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let req = await axios({
+        method: 'post',
+        url: `${baseUrl}/api/users/${id}?_method=PUT`,
+        data: data,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: 'Bearer ' + token,
+        },
+      }).then(response => {
+        console.log('data from api markers: ', response);
+        resolve(response.data.data);
+      });
+    } catch (error) {
+      console.log(error.response); // this is the main part. Use the response property from the error object
+
+      reject(error.response);
+    }
+  });
 }

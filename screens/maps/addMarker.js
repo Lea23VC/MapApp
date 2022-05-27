@@ -48,6 +48,7 @@ Geocode.setLocationType('ROOFTOP');
 Geocode.enableDebug();
 
 export default function ModalMap({navigation, route}) {
+  console.log('params in Addmarker: ', route.params);
   const [text, onChangeText] = React.useState('Useless Text');
   const [name, onChangeName] = React.useState(
     route.params.marker?.title ? route.params.marker.title : null,
@@ -107,7 +108,7 @@ export default function ModalMap({navigation, route}) {
       name: imagePoint,
     });
 
-    formData.append('userId', 1);
+    formData.append('userId', route.params.user.uid);
     formData.append('title', name);
     formData.append('latitude', route.params.currentPosition.latitude);
     formData.append('longitude', route.params.currentPosition.longitude);
@@ -124,7 +125,7 @@ export default function ModalMap({navigation, route}) {
     formData.append('paper', paper ? 1 : 0);
     formData.append('tetra', tetra ? 1 : 0);
 
-    setMarker(formData);
+    await setMarker(formData);
 
     // var address = await Geocode.fromLatLng(
     //   route.params.currentPosition.latitude,
@@ -433,7 +434,7 @@ export default function ModalMap({navigation, route}) {
                   <Image
                     style={styles.tinyLogo}
                     source={{
-                      uri: route.params.marker.imgUrl,
+                      uri: imagePoint,
                     }}
                   />
                 </View>

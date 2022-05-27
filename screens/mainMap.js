@@ -98,8 +98,6 @@ export default function App({route, navigation}) {
   const initialState = {
     latitude: null,
     longitude: null,
-    latitudeDelta: 0.000922,
-    longitudeDelta: 0.000421,
   };
   const permission = () => {
     PermissionsAndroid.request(
@@ -453,12 +451,12 @@ export default function App({route, navigation}) {
     }
   }
 
-  useFocusEffect(
-    useCallback(() => {
-      const unsubscribe = getAddressFromCoords;
-      return () => unsubscribe();
-    }, [currentPosition]),
-  );
+  // useFocusEffect(
+  //   useCallback(() => {
+  //     const unsubscribe = getAddressFromCoords;
+  //     return () => unsubscribe();
+  //   }, [currentPosition]),
+  // );
 
   function getCurrentPositionService() {
     // console.log('estoy chato 2');
@@ -468,7 +466,6 @@ export default function App({route, navigation}) {
         console.log('inide geolocation get current');
         const {longitude, latitude} = position.coords;
         setCurrentPosition({
-          ...currentPosition,
           latitude,
           longitude,
         });
@@ -508,9 +505,32 @@ export default function App({route, navigation}) {
     setMarkerPosition(null);
   }
 
-  function addMarker(marker) {
+  async function addMarker(marker) {
+    await Geolocation.getCurrentPosition(
+      position => {
+        console.log('inide geolocation get current before adding marker');
+        const {longitude, latitude} = position.coords;
+        setCurrentPosition({
+          ...currentPosition,
+          latitude,
+          longitude,
+        });
+        // console.log(
+        //   'current position inide geolocation get current??: ',
+        //   currentPosition,
+        // );
+      },
+
+      error => alert(error.message),
+      {
+        timeout: 20000,
+        maximumAge: 5000,
+        enableHighAccuracy: true,
+      },
+    );
+
     console.log(route.params.user);
-    console.log('address data: ', address);
+
     navigation.navigate('AddMarker', {
       currentPosition: currentPosition,
       user: route.params.user,
@@ -530,7 +550,7 @@ export default function App({route, navigation}) {
     }
   }
 
-  return currentPosition.latitude && markers.length > 0 ? (
+  return markers.length > 0 ? (
     <View>
       <MapView
         ref={mapView => {
@@ -541,7 +561,11 @@ export default function App({route, navigation}) {
         followsUserLocation
         style={styles.map}
         region={markerPosition}
-        initialRegion={currentPosition}>
+        initialRegion={{
+          latitudeDelta: 0.000922,
+          longitudeDelta: 0.000421,
+          ...currentPosition,
+        }}>
         {markers.map((marker, i) => (
           <Marker
             onPress={() => showModal(marker.id)}
@@ -553,12 +577,12 @@ export default function App({route, navigation}) {
             title={marker.title ? marker.title : 'placeholder'}></Marker>
         ))}
 
-        <Marker
+        {/* <Marker
           draggable={true}
           pinColor="yellow"
           coordinate={currentPosition}
           title={'XD'}
-          description="This is where the magic happens!"></Marker>
+          description="This is where the magic happens!"></Marker> */}
       </MapView>
 
       <KeyboardAvoidingView
@@ -582,7 +606,11 @@ export default function App({route, navigation}) {
               onDismiss={hideModal}
               contentContainerStyle={styles.modalStyle}>
               {modalMarker ? (
-                <MarkerModalContent marker={modalMarker} />
+                <MarkerModalContent
+                  marker={modalMarker}
+                  navigation={navigation}
+                  user={route.params.user}
+                />
               ) : (
                 <ActivityIndicator
                   style={{flex: 1}}

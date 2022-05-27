@@ -40,7 +40,7 @@ export default function App({navigation}) {
     if (user) {
       token = await user.getIdToken();
       console.log('token: ', token);
-      await loginUserBackend(token);
+      await loginUserBackend(token, user.uid);
     }
 
     setUser(user);
@@ -98,13 +98,13 @@ export default function App({navigation}) {
   }
 
   async function goToMap() {
-    const user_data = await firestore().collection('Users').doc(user.uid).get();
-    console.log('user data: ', user_data);
-    navigation.navigate('Map', {name: 'Jane', user: user_data});
+    // const user_data = await firestore().collection('Users').doc(user.uid).get();
+    // console.log('user data: ', user_data);
+    navigation.navigate('Map', {name: 'Jane', user: user});
   }
 
   async function goToProfile() {
-    navigation.navigate('Profile', {userId: user.uid});
+    navigation.navigate('Profile', {userId: user.uid, userAuth: user.uid});
   }
 
   useFocusEffect(

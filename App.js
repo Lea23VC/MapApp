@@ -13,7 +13,7 @@ import addMarker from './screens/maps/addMarker';
 import Home from './screens/home';
 import editMarker from './screens/maps/editMarker';
 import Profile from './screens/profile';
-
+import EditProfile from './screens/editProfile';
 import {LogBox} from 'react-native';
 LogBox.ignoreLogs([
   'Non-serializable values were found in the navigation state',
@@ -49,6 +49,11 @@ export default function App() {
           name="Profile"
           component={Profile}
           options={{title: 'Perfil'}}
+        />
+        <Stack.Screen
+          name="Edit Profile"
+          component={EditProfile}
+          options={{title: 'Editar Perfil'}}
         />
       </Stack.Navigator>
     </NavigationContainer>

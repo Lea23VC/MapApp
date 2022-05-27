@@ -53,28 +53,31 @@ export async function getMarker(token, id, params = null) {
 }
 
 export async function setMarker(data) {
-  CookieManager.get(BASE_URL_API).then(async cookies => {
-    console.log('CookieManager.get => ', +cookies);
-    console.log('No cookies??: ', cookies.authToken.value);
-    try {
-      let req = await axios({
-        method: 'post',
-        url: `${baseUrl}/api/markers`,
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'multipart/form-data',
-          Authorization: 'Bearer ' + cookies.authToken.value,
-        },
-        data: data,
-      }).then(response => {
-        console.log('data: ', response.data);
-        console.log('created???');
-      });
-    } catch (error) {
-      console.log(error.response); // this is the main part. Use the response property from the error object
+  return new Promise((resolve, reject) => {
+    CookieManager.get(BASE_URL_API).then(async cookies => {
+      console.log('CookieManager.get => ', +cookies);
+      console.log('No cookies??: ', cookies.authToken.value);
+      try {
+        let req = await axios({
+          method: 'post',
+          url: `${baseUrl}/api/markers`,
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'multipart/form-data',
+            Authorization: 'Bearer ' + cookies.authToken.value,
+          },
+          data: data,
+        }).then(response => {
+          console.log('data: ', response.data);
+          console.log('created???');
+          resolve(response.ata);
+        });
+      } catch (error) {
+        console.log(error.response); // this is the main part. Use the response property from the error object
 
-      return error.response;
-    }
-    // console.log('a after get Markers: ', a);
+        reject(error.response);
+      }
+      // console.log('a after get Markers: ', a);
+    });
   });
 }
