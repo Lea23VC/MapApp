@@ -54,51 +54,15 @@ const SPACING_FOR_CARD_INSET = width * 0.1 - 10;
 const MARKER_HEIGHT = 220;
 const MARKER_WIDTH = width * 0.5;
 var b = [];
-firestore()
-  .collection('Maps')
-  .orderBy('createdAt')
-  .onSnapshot(querySnapshot => {
-    // console.log(querySnapshot.docs);
-    b = querySnapshot.docs.map(doc => {
-      var data = {
-        ...doc.data(),
-        id: doc.id,
-      };
 
-      return data;
-    });
-    // console.log('B: ', b);
-    // querySnapshot.forEach(snapshot => {});
-  });
-
-// set Google Maps Geocoding API for purposes of quota management. Its optional but recommended.
-Geocode.setApiKey('AIzaSyBCvtHhm7gF4jLVoNQtXuCWKL5-JrdtyUg');
-
-// set response language. Defaults to english.
-Geocode.setLanguage('es');
-
-// set response region. Its optional.
-// A Geocoding request with region=es (Spain) will return the Spanish city.
-Geocode.setRegion('cl');
-
-// set location_type filter . Its optional.
-// google geocoder returns more that one address for given lat/lng.
-// In some case we need one address as response for which google itself provides a location_type filter.
-// So we can easily parse the result for fetching address components
-// ROOFTOP, RANGE_INTERPOLATED, GEOMETRIC_CENTER, APPROXIMATE are the accepted values.
-// And according to the below google docs in description, ROOFTOP param returns the most accurate result.
-Geocode.setLocationType('ROOFTOP');
-
-// Enable or disable logs. Its optional.
-Geocode.enableDebug();
-
-export default function App({route, navigation}) {
+export default function mainMap({route, navigation}) {
   // console.log('route inside mainMap: ', route.params);
 
   const initialState = {
     latitude: null,
     longitude: null,
   };
+
   const permission = () => {
     PermissionsAndroid.request(
       PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
@@ -107,6 +71,18 @@ export default function App({route, navigation}) {
       PermissionsAndroid.PERMISSIONS.ACCESS_BACKGROUND_LOCATION,
     );
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+      const askPermissions = permission;
+
+      askPermissions();
+      return () => {
+        isActive = false;
+      };
+    }, []),
+  );
 
   // useFocusEffect(
   //   useCallback(() => {
@@ -132,28 +108,6 @@ export default function App({route, navigation}) {
   };
 
   const [markers, setMarkers] = useState([]);
-
-  useFocusEffect(
-    useCallback(() => {
-      let isActive = true;
-
-      async function fetchMarkers() {
-        console.log('inside fetch markers: ');
-        const cookies = await CookieManager.get(BASE_URL_API);
-        console.log('cookies aaaa: ', cookies);
-        const data_makers = await getMarkers(cookies.authToken.value, params);
-        if (isActive) {
-          setMarkers(data_makers);
-        }
-      }
-
-      fetchMarkers();
-
-      return () => {
-        isActive = false;
-      };
-    }, []),
-  );
 
   // console.log('markers from backend: ', markers);
 
@@ -186,9 +140,65 @@ export default function App({route, navigation}) {
     useCallback(() => {
       let isActive = true;
 
+      const fetchUsers = async () => {
+        console.log('Test if get markers');
+        const data_makers = await getMarkers(params);
+        if (isActive) {
+          setMarkers(data_makers);
+        }
+      };
+
+      fetchUsers();
+      return () => {
+        isActive = false;
+      };
+    }, [params]),
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+
+      const getPosition = () => {
+        Geolocation.getCurrentPosition(
+          position => {
+            console.log(
+              'inide geolocation get current before adding marker XDDD',
+            );
+            const {longitude, latitude} = position.coords;
+
+            console.log(longitude);
+            if (isActive) {
+              setCurrentPosition({
+                latitude,
+                longitude,
+              });
+            }
+          },
+
+          error => alert(error.message),
+          {
+            timeout: 20000,
+            maximumAge: 5000,
+            enableHighAccuracy: true,
+          },
+        );
+      };
+      getPosition();
+      return () => {
+        isActive = false;
+      };
+    }, []),
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+
       const fetchUser = async () => {
         try {
           if (isActive) {
+            console.log('current position??: ', currentPosition);
             setQuery();
             console.log('set markers i guesss');
           }
@@ -219,40 +229,57 @@ export default function App({route, navigation}) {
     ]),
   );
 
-  useFocusEffect(
-    useCallback(() => {
-      let isActive = true;
+  // useFocusEffect(
+  //   useCallback(() => {
+  //     let isActive = true;
 
-      const fetchUser = async () => {
-        try {
-          const cookies = await CookieManager.get(BASE_URL_API);
-          getMarkers(cookies.authToken.value, params);
+  //     const fetchUser = async () => {
+  //       try {
+  //         const cookies = await CookieManager.get(BASE_URL_API);
+  //         getMarkers(cookies.authToken.value, params);
 
-          if (isActive) {
-            console.log('set markers i guesss');
-          }
-        } catch (e) {
-          console.log('Handle error WIP');
-        }
-      };
+  //         if (isActive) {
+  //           console.log('set markers i guesss');
+  //         }
+  //       } catch (e) {
+  //         console.log('Handle error WIP');
+  //       }
+  //     };
 
-      fetchUser();
+  //     fetchUser();
 
-      return () => {
-        isActive = false;
-      };
-    }, [params]),
-  );
+  //     return () => {
+  //       isActive = false;
+  //     };
+  //   }, [params]),
+  // );
 
   async function getMarkerbyId(id) {
     const cookies = await CookieManager.get(BASE_URL_API);
-    setModalMarker(await getMarker(cookies.authToken.value, id));
+    await Geolocation.getCurrentPosition(
+      position => {
+        console.log('inide geolocation get current before adding marker');
+        const {longitude, latitude} = position.coords;
+        setCurrentPosition({
+          latitude,
+          longitude,
+        });
+      },
+
+      error => alert(error.message),
+      {
+        timeout: 20000,
+        maximumAge: 5000,
+        enableHighAccuracy: true,
+      },
+    );
+    setModalMarker(await getMarker(cookies.authToken.value, id, params));
   }
 
   async function getMarkersWithMaterial(value, valueChange) {
     console.log('Material: ', value);
     console.log('Params??: ', params);
-    if (value == null) {
+    if (value === null) {
       valueChange(1);
     } else {
       valueChange(null);
@@ -357,7 +384,7 @@ export default function App({route, navigation}) {
       name: 'Aceite',
       filter_name: 'oil',
       value: oil,
-      value: setOil,
+      valueChange: setOil,
       icon: <Fontisto name="hotel" style={styles.chipsIcon} size={15} />,
     },
   ];
@@ -380,75 +407,10 @@ export default function App({route, navigation}) {
       otherPapers: otherPapers,
       paper: paper,
       tetra: tetra,
+      currentPosition: [currentPosition.latitude, currentPosition.longitude],
     };
 
     setParams(query);
-  }
-
-  async function getAddressFromCoords() {
-    if (currentPosition.latitude) {
-      // console.log('current position ???: ', currentPosition);
-      Geocode.fromLatLng(
-        currentPosition.latitude,
-        currentPosition.longitude,
-      ).then(
-        response => {
-          // const address = response.results[0].formatted_address;
-          let city, grandCity, state, country, address_street, address_number;
-          for (
-            let i = 0;
-            i < response.results[0].address_components.length;
-            i++
-          ) {
-            for (
-              let j = 0;
-              j < response.results[0].address_components[i].types.length;
-              j++
-            ) {
-              switch (response.results[0].address_components[i].types[j]) {
-                case 'street_number':
-                  address_number =
-                    response.results[0].address_components[i].long_name;
-                  break;
-                case 'route':
-                  address_street =
-                    response.results[0].address_components[i].long_name;
-                  break;
-                case 'locality':
-                  city = response.results[0].address_components[i].long_name;
-                  break;
-                case 'administrative_area_level_2':
-                  grandCity =
-                    response.results[0].address_components[i].long_name;
-                  break;
-                case 'administrative_area_level_1':
-                  state = response.results[0].address_components[i].long_name;
-                  break;
-                case 'country':
-                  country = response.results[0].address_components[i].long_name;
-                  break;
-              }
-            }
-          }
-          // console.log(response.results[0].address_components);
-          var address_data = {
-            address_street: address_street,
-            address_number: address_number,
-            commune: city,
-            city: grandCity,
-            state: state,
-            country: country,
-          };
-          // console.log('aaaa 56: ', address_data);
-          setAddress(address_data);
-          return address_data;
-        },
-        error => {
-          console.error(error);
-          return null;
-        },
-      );
-    }
   }
 
   // useFocusEffect(
@@ -491,11 +453,11 @@ export default function App({route, navigation}) {
   //   }, [currentPosition]),
   // );
 
-  useFocusEffect(
-    useCallback(() => {
-      getCurrentPositionService();
-    }, []),
-  );
+  // useFocusEffect(
+  //   useCallback(() => {
+  //     getCurrentPositionService();
+  //   }, []),
+  // );
   const _map = React.useRef(null);
   const _scrollView = React.useRef(null);
 
@@ -515,10 +477,6 @@ export default function App({route, navigation}) {
           latitude,
           longitude,
         });
-        // console.log(
-        //   'current position inide geolocation get current??: ',
-        //   currentPosition,
-        // );
       },
 
       error => alert(error.message),
@@ -550,7 +508,7 @@ export default function App({route, navigation}) {
     }
   }
 
-  return markers.length > 0 ? (
+  return markers.length >= 0 && currentPosition.latitude != null ? (
     <View>
       <MapView
         ref={mapView => {
@@ -585,7 +543,7 @@ export default function App({route, navigation}) {
           description="This is where the magic happens!"></Marker> */}
       </MapView>
 
-      <KeyboardAvoidingView
+      {/* <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : null}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
         style={styles.searchBox}>
@@ -596,7 +554,7 @@ export default function App({route, navigation}) {
           style={{flex: 1, padding: 0}}
         />
         <Ionicons name="ios-search" size={20} />
-      </KeyboardAvoidingView>
+      </KeyboardAvoidingView> */}
 
       <View style={{alignItems: 'center', justifyContent: 'center'}}>
         <View>
@@ -610,6 +568,7 @@ export default function App({route, navigation}) {
                   marker={modalMarker}
                   navigation={navigation}
                   user={route.params.user}
+                  setModalVisible={setModalVisible}
                 />
               ) : (
                 <ActivityIndicator
