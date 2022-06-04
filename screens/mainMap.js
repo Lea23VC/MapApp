@@ -526,7 +526,12 @@ export default function mainMap({route, navigation}) {
         }}>
         {markers.map((marker, i) => (
           <Marker
-            onPress={() => showModal(marker.id)}
+            onPress={() =>
+              navigation.navigate('Marker Info', {
+                marker_id: marker.id,
+                user: route.params.user,
+              })
+            }
             key={i}
             coordinate={{
               latitude: marker.latitude,
@@ -555,7 +560,7 @@ export default function mainMap({route, navigation}) {
         />
         <Ionicons name="ios-search" size={20} />
       </KeyboardAvoidingView> */}
-
+      {/* 
       <View style={{alignItems: 'center', justifyContent: 'center'}}>
         <View>
           <Portal>
@@ -580,7 +585,7 @@ export default function mainMap({route, navigation}) {
             </Modal>
           </Portal>
         </View>
-      </View>
+      </View> */}
       <View style={styles.addMarker}>
         <Button
           mode="outlined"

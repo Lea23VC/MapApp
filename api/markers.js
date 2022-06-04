@@ -31,16 +31,18 @@ export async function getMarkers(params = null) {
   });
 }
 
-export async function getMarker(token, id, params = null) {
+export async function getMarker(id, params = null) {
   return new Promise(async (resolve, reject) => {
     try {
+      const cookies = await CookieManager.get(BASE_URL_API);
+
       let req = await axios({
         method: 'get',
         url: `${baseUrl}/api/markers/${id}`,
         params: params,
         headers: {
           'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + token,
+          Authorization: 'Bearer ' + cookies.authToken.value,
         },
       }).then(response => {
         console.log('data from api markers: ', response);
