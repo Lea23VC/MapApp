@@ -1,18 +1,40 @@
 import React, {useState, useEffect, useCallback} from 'react';
 
-import {Text, Button, ActivityIndicator, Colors} from 'react-native-paper';
-import {View, Image, ScrollView, StyleSheet} from 'react-native';
+import {
+  Text,
+  Button,
+  ActivityIndicator,
+  Colors,
+  Modal,
+  Portal,
+  Provider,
+} from 'react-native-paper';
+import {View, Image, ScrollView, StyleSheet, Pressable} from 'react-native';
 import {updateMarker} from '../../api/markers';
 import {useFocusEffect} from '@react-navigation/native';
 import Comments from '../../components/comments/list';
-import Geolocation from 'react-native-geolocation-service';
+import StatusDropdown from '../../components/dropdowns/statusDropdown';
+import CookieManager from '@react-native-cookies/cookies';
+import {BASE_URL_API} from '@env';
+import ImageView from 'react-native-image-viewing';
+
 import {getMarker} from '../../api/markers';
+import {getCoords} from '../../api/geolocation';
 // import {useFocusEffect} from '@react-navigation/native';
 export default function MarkerModalContent({navigation, route}) {
+  const [visibleStatusModal, setVisibleStatusModal] = useState(false);
+  const [visible, setIsVisible] = useState(false);
+
+  const showModal = () => setVisibleStatusModal(true);
+  const hideModal = () => setVisibleStatusModal(false);
+
   console.log('route params: ', route.params);
   const [like, setLike] = useState(false);
   const [dislike, setDislike] = useState(false);
+  const [likes, setLikes] = useState(0);
+  const [dislikes, setDislikes] = useState(0);
 
+  const [changingData, setChangingData] = useState(false);
   //   const [like, setLike] = useState(
   //     route.params.marker.voted_marker == 1 ? true : false,
   //   );
@@ -21,13 +43,19 @@ export default function MarkerModalContent({navigation, route}) {
   //     route.params.marker.voted_marker == -1 ? true : false,
   //   );
   const [currentPosition, setCurrentPosition] = useState(null);
+  const [permissions, setPermissions] = useState([]);
+
+  console.log('Permissions: ', permissions);
 
   const [marker, setMarker] = useState(null);
+  const [fetched, setFetched] = useState(false);
 
+  const [comments, setComments] = useState(null);
+
+  const [dropdownValue, setDropdownValue] = useState(null);
   //   const [likes, setLikes] = useState(route.params.marker.likes);
   //   const [dislikes, setDislikes] = useState(route.params.marker.dislikes);
-  const [likes, setLikes] = useState(0);
-  const [dislikes, setDislikes] = useState(0);
+
   async function goToProfile() {
     // setModalVisible(false);
     navigation.navigate('Profile', {
@@ -36,25 +64,25 @@ export default function MarkerModalContent({navigation, route}) {
     });
   }
 
-  async function updateCurrentPosition() {
-    await Geolocation.getCurrentPosition(
-      position => {
-        console.log('inide geolocation get current before adding marker');
-        const {longitude, latitude} = position.coords;
-        setCurrentPosition({
-          latitude,
-          longitude,
-        });
-      },
+  // async function updateCurrentPosition() {
+  //   await Geolocation.getCurrentPosition(
+  //     position => {
+  //       console.log('inide geolocation get current before adding marker');
+  //       const {longitude, latitude} = position.coords;
+  //       setCurrentPosition({
+  //         latitude,
+  //         longitude,
+  //       });
+  //     },
 
-      error => alert(error.message),
-      {
-        timeout: 20000,
-        maximumAge: 5000,
-        enableHighAccuracy: true,
-      },
-    );
-  }
+  //     error => alert(error.message),
+  //     {
+  //       timeout: 20000,
+  //       maximumAge: 5000,
+  //       enableHighAccuracy: true,
+  //     },
+  //   );
+  // }
 
   useFocusEffect(
     useCallback(() => {
@@ -62,34 +90,25 @@ export default function MarkerModalContent({navigation, route}) {
 
       const fetchMarker = async () => {
         console.log('Test if get markers');
-        if (currentPosition) {
-          const params = {
-            currentPosition: [
-              currentPosition.latitude,
-              currentPosition.longitude,
-            ],
-          };
-          const data_maker = await getMarker(route.params.marker_id, params);
-          if (isActive) {
-            setMarker(data_maker);
-          }
-        }
-      };
 
-      fetchMarker();
-      return () => {
-        isActive = false;
-      };
-    }, [currentPosition]),
-  );
+        const {coords} = await getCoords();
+        const params = {
+          distanceFromCoords: `[${coords.latitude}, ${coords.longitude}]`,
+        };
 
-  useFocusEffect(
-    useCallback(() => {
-      let isActive = true;
+        const data_maker = await getMarker(route.params.marker_id, params);
+        const cookies = await CookieManager.get(BASE_URL_API);
 
-      const fetchMarker = async () => {
         if (isActive) {
-          updateCurrentPosition();
+          setMarker(data_maker);
+          setComments(data_maker.comments);
+          setLikes(data_maker.likes);
+          setDislikes(data_maker.dislikes);
+          setFetched(true);
+          setLike(data_maker.voted_marker == 1 ? true : false);
+          setDislike(data_maker.voted_marker == -1 ? true : false);
+          setDropdownValue(data_maker.status);
+          setPermissions(JSON.parse(cookies.permissions.value));
         }
       };
 
@@ -99,6 +118,39 @@ export default function MarkerModalContent({navigation, route}) {
       };
     }, []),
   );
+
+  // useFocusEffect(
+  //   useCallback(() => {
+  //     let isActive = true;
+
+  //     const fetchMarker = async () => {
+  //       if (isActive) {
+  //         updateCurrentPosition();
+  //       }
+  //     };
+
+  //     fetchMarker();
+  //     return () => {
+  //       isActive = false;
+  //     };
+  //   }, []),
+  // );
+  async function updateComments(data) {
+    console.log("THIS DOESN'T WORK'");
+    console.log(data);
+
+    setComments(data);
+  }
+
+  async function changeStatus() {
+    const data = {
+      status: dropdownValue.value,
+    };
+    setChangingData(true);
+    await updateMarker(route.params.marker_id, data);
+    setChangingData(false);
+    hideModal();
+  }
 
   async function likeMarker(value) {
     console.log('LIKE: ', like);
@@ -139,26 +191,37 @@ export default function MarkerModalContent({navigation, route}) {
     setDislikes(dislikes + sumDislike);
   }
 
+  async function editMarker() {
+    navigation.navigate('AddMarker', {
+      user: route.params.user,
+      marker: marker ? marker : [],
+      edit: true,
+    });
+  }
+
   useEffect(() => {
     let isActive = true;
 
-    const updateVotes = async () => {
-      const data = {
-        likes: likes,
-        dislikes: dislikes,
-        user_voted: route.params.user.uid,
-        vote_action: like ? 1 : dislike ? -1 : 0,
+    if (fetched) {
+      const updateVotes = async () => {
+        const data = {
+          likes: likes,
+          dislikes: dislikes,
+          user_voted: route.params.user.uid,
+          vote_action: like ? 1 : dislike ? -1 : 0,
+        };
+        const data_makers = await updateMarker(route.params.marker_id, data);
+        if (isActive) {
+        }
       };
-      const data_makers = await updateMarker(route.params.marker_id, data);
-      if (isActive) {
-      }
-    };
 
-    updateVotes();
+      updateVotes();
+    }
+
     return () => {
       isActive = false;
     };
-  }, [likes]),
+  }, [likes, dislikes]),
     // useEffect(() => {
     //   const subscriber = () => {
     //     console.log(like);
@@ -169,47 +232,146 @@ export default function MarkerModalContent({navigation, route}) {
 
     console.log('Marker inside modal: ', route.params.marker);
   return marker ? (
-    <View>
-      <Text>{marker.title} </Text>
-
-      <Image
-        style={styles.logo}
-        source={{
-          uri: marker.imgURL,
-        }}
-      />
-
-      <Text>A {marker.distance} </Text>
-
-      <Text>
-        Usuario:{' '}
-        <Text onPress={() => goToProfile()}>{marker.user[0].username}</Text>
-      </Text>
-
-      <View>
-        <Text>Likes: {likes} </Text>
-        <Text>Dislikes: {dislikes} </Text>
-        <View>
+    <ScrollView>
+      <View style={[styles.fixToText, {padding: 10}]}>
+        <Pressable onPress={() => goToProfile()}>
+          <Image
+            style={styles.userImg}
+            source={{
+              uri: marker.user[0].imgURL,
+            }}
+          />
+        </Pressable>
+        <Text onPress={() => goToProfile()} style={styles.username}>
+          {marker.user[0].username}
+        </Text>
+        {marker.user[0].id == route.params.user.uid && (
           <Button
             mode="contained"
-            onPress={() => likeMarker(1)}
-            icon="pistol"
-            color={like ? 'blue' : 'white'}
-            contentStyle={like ? styles.selected : null}>
-            +1
+            color="white"
+            labelStyle={styles.buttonEditFont}
+            style={[styles.button, {marginLeft: 10}]}
+            onPress={() => editMarker()}>
+            Cambiar info punto
           </Button>
-          <Button
-            mode="contained"
-            onPress={() => likeMarker(-1)}
-            icon="pistol"
-            color={dislike ? 'blue' : 'white'}
-            contentStyle={dislike ? styles.selected : null}>
-            -1
-          </Button>
-        </View>
-        <Comments marker={marker} user={route.params.user.uid} />
+        )}
       </View>
-    </View>
+
+      <View style={styles.centerView}>
+        <Text style={styles.title}>{marker.title} </Text>
+        <Pressable onPress={() => setIsVisible(true)}>
+          <Image
+            style={styles.logo}
+            source={{
+              uri: marker.imgURL,
+            }}
+          />
+        </Pressable>
+
+        <ImageView
+          images={[{uri: marker.imgURL}]}
+          imageIndex={0}
+          visible={visible}
+          onRequestClose={() => setIsVisible(false)}
+        />
+        <Text> {marker.created_at} </Text>
+        {permissions.some(item => item.id === 1) && (
+          <View>
+            <Portal>
+              <Modal
+                visible={visibleStatusModal}
+                onDismiss={hideModal}
+                contentContainerStyle={styles.containerStyle}>
+                {!changingData ? (
+                  <>
+                    <StatusDropdown
+                      value={dropdownValue}
+                      setValue={setDropdownValue}
+                    />
+                    <View style={styles.buttonOuterLayout}>
+                      <Button
+                        mode="contained"
+                        color="white"
+                        style={styles.button}
+                        onPress={() => changeStatus()}>
+                        Confirmar
+                      </Button>
+                    </View>
+                  </>
+                ) : (
+                  <ActivityIndicator
+                    style={{flex: 1}}
+                    animating={true}
+                    color={Colors.red800}
+                  />
+                )}
+              </Modal>
+            </Portal>
+            <View style={styles.buttonOuterLayout}>
+              <Button
+                mode="contained"
+                color="white"
+                style={styles.button}
+                onPress={showModal}>
+                Cambiar Estado
+              </Button>
+            </View>
+          </View>
+        )}
+      </View>
+      <View style={styles.viewData}>
+        <Text>A {marker.distance} </Text>
+
+        <Text style={styles.bold}>Materiales que recibe: </Text>
+        <View style={styles.materialItems}>
+          {marker.materials.map((material, index) => (
+            <Text key={index}> {material.name} </Text>
+          ))}
+        </View>
+        {dropdownValue && (
+          <View>
+            <Text>
+              <Text style={styles.bold}>Estado: </Text>
+              {dropdownValue.label}
+            </Text>
+          </View>
+        )}
+
+        <View>
+          <View style={styles.fixToText}>
+            <Button
+              mode="contained"
+              onPress={() => likeMarker(1)}
+              icon="thumb-up-outline"
+              color={like ? 'blue' : 'white'}
+              style={{width: '50%'}}
+              contentStyle={[like ? styles.selected : null]}>
+              {likes}
+            </Button>
+            <Button
+              mode="contained"
+              onPress={() => likeMarker(-1)}
+              icon="thumb-down-outline"
+              style={{width: '50%'}}
+              color={dislike ? 'blue' : 'white'}
+              contentStyle={dislike ? styles.selected : null}>
+              {dislikes}
+            </Button>
+          </View>
+        </View>
+
+        {comments && (
+          <Comments
+            navigation={navigation}
+            updateComments={updateComments}
+            comments={comments}
+            setComments={setComments}
+            marker_id={marker.id}
+            user={route.params.user.uid}
+          />
+        )}
+      </View>
+    </ScrollView>
   ) : (
     <ActivityIndicator
       style={{flex: 1}}
@@ -219,9 +381,14 @@ export default function MarkerModalContent({navigation, route}) {
   );
 }
 const styles = StyleSheet.create({
+  viewData: {
+    padding: 20,
+  },
+
   logo: {
     width: 200,
     height: 200,
+    borderRadius: 10,
   },
 
   selected: {
@@ -229,5 +396,63 @@ const styles = StyleSheet.create({
   },
   selectedText: {
     color: 'white',
+  },
+  materialItems: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+
+  containerStyle: {
+    backgroundColor: 'white',
+    margin: 20,
+    height: 200,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  buttonOuterLayout: {
+    paddingTop: 10,
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  button: {},
+  fixToText: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  centerView: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  title: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    paddingTop: 0,
+    paddingBottom: 10,
+  },
+
+  username: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: 'grey',
+    paddingLeft: 10,
+  },
+  bold: {
+    fontWeight: 'bold',
+  },
+
+  userImg: {
+    height: 50,
+    width: 50,
+    borderRadius: 75,
+  },
+  buttonEdit: {},
+  buttonEditFont: {
+    fontSize: 12,
   },
 });

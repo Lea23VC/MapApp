@@ -1,48 +1,26 @@
-import React, {useState, setState, useEffect, useCallback} from 'react';
+import React, {useState, useCallback} from 'react';
 import {
   StyleSheet,
   Text,
   Dimensions,
   View,
-  StatusBar,
   Pressable,
-  TextInput,
   PermissionsAndroid,
   Animated,
   TouchableOpacity,
-  KeyboardAvoidingView,
-  WebView,
   Image,
   ScrollView,
 } from 'react-native';
-import MapView, {Marker, Callout, AnimatedRegion} from 'react-native-maps';
+import MapView, {Marker} from 'react-native-maps';
 import {useFocusEffect} from '@react-navigation/native';
 
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Fontisto from 'react-native-vector-icons/Fontisto';
-import {
-  Checkbox,
-  Modal,
-  Portal,
-  Button,
-  ActivityIndicator,
-  Colors,
-  Provider,
-} from 'react-native-paper';
-import {Svg, Image as ImageSvg} from 'react-native-svg';
+import {Button, ActivityIndicator, Colors} from 'react-native-paper';
 import Geolocation from 'react-native-geolocation-service';
 
-import MarkerModalContent from '../components/modals/MarkerModalContent';
-
-import ModalMap from '../components/map/modalMap.js';
-import firestore from '@react-native-firebase/firestore';
-
-import Geocode from 'react-geocode';
-
-import CookieManager from '@react-native-cookies/cookies';
-
-import {BASE_URL_API} from '@env';
+import {getCoords} from '../api/geolocation';
 
 import {getMarkers, getMarker} from '../api/markers';
 
@@ -57,25 +35,25 @@ var b = [];
 
 export default function mainMap({route, navigation}) {
   // console.log('route inside mainMap: ', route.params);
-
+  const [permissionGranted, setPermissionGranted] = useState(null);
   const initialState = {
     latitude: null,
     longitude: null,
   };
 
-  const permission = () => {
-    PermissionsAndroid.request(
-      PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
+  const askForPermission = async () => {
+    const granted = await PermissionsAndroid.request(
       PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-      PermissionsAndroid.PERMISSIONS.FOREGROUND_SERVICE,
       PermissionsAndroid.PERMISSIONS.ACCESS_BACKGROUND_LOCATION,
     );
+
+    setPermissionGranted(granted);
   };
 
   useFocusEffect(
     useCallback(() => {
       let isActive = true;
-      const askPermissions = permission;
+      const askPermissions = askForPermission;
 
       askPermissions();
       return () => {
@@ -95,23 +73,10 @@ export default function mainMap({route, navigation}) {
   let mapAnimation = new Animated.Value(0);
 
   // console.log('params: ', props.user);
-  const [modalVisible, setModalVisible] = useState(false);
-
-  function showModal(id) {
-    setModalVisible(true);
-    getMarkerbyId(id);
-  }
-
-  const hideModal = () => {
-    setModalVisible(false);
-    setModalMarker(null);
-  };
 
   const [markers, setMarkers] = useState([]);
 
   // console.log('markers from backend: ', markers);
-
-  const [modalMarker, setModalMarker] = useState(null);
 
   const [currentPosition, setCurrentPosition] = useState(initialState);
 
@@ -141,10 +106,16 @@ export default function mainMap({route, navigation}) {
       let isActive = true;
 
       const fetchUsers = async () => {
-        console.log('Test if get markers');
-        const data_makers = await getMarkers(params);
-        if (isActive) {
-          setMarkers(data_makers);
+        if (permissionGranted == PermissionsAndroid.RESULTS.GRANTED) {
+          const {coords} = await getCoords();
+          const data_makers = await getMarkers({
+            ...params,
+            distanceFromCoords: `[${coords.latitude}, ${coords.longitude}]`,
+          });
+
+          if (isActive) {
+            setMarkers(data_makers);
+          }
         }
       };
 
@@ -152,7 +123,7 @@ export default function mainMap({route, navigation}) {
       return () => {
         isActive = false;
       };
-    }, [params]),
+    }, [params, permissionGranted]),
   );
 
   useFocusEffect(
@@ -160,35 +131,37 @@ export default function mainMap({route, navigation}) {
       let isActive = true;
 
       const getPosition = () => {
-        Geolocation.getCurrentPosition(
-          position => {
-            console.log(
-              'inide geolocation get current before adding marker XDDD',
-            );
-            const {longitude, latitude} = position.coords;
+        if (permissionGranted == PermissionsAndroid.RESULTS.GRANTED) {
+          Geolocation.getCurrentPosition(
+            position => {
+              console.log(
+                'inide geolocation get current before adding marker XDDD',
+              );
+              const {longitude, latitude} = position.coords;
 
-            console.log(longitude);
-            if (isActive) {
-              setCurrentPosition({
-                latitude,
-                longitude,
-              });
-            }
-          },
+              console.log(longitude);
+              if (isActive) {
+                setCurrentPosition({
+                  latitude,
+                  longitude,
+                });
+              }
+            },
 
-          error => alert(error.message),
-          {
-            timeout: 20000,
-            maximumAge: 5000,
-            enableHighAccuracy: true,
-          },
-        );
+            error => alert(error.message),
+            {
+              timeout: 20000,
+              maximumAge: 5000,
+              enableHighAccuracy: true,
+            },
+          );
+        }
       };
       getPosition();
       return () => {
         isActive = false;
       };
-    }, []),
+    }, [permissionGranted]),
   );
 
   useFocusEffect(
@@ -228,53 +201,6 @@ export default function mainMap({route, navigation}) {
       oil,
     ]),
   );
-
-  // useFocusEffect(
-  //   useCallback(() => {
-  //     let isActive = true;
-
-  //     const fetchUser = async () => {
-  //       try {
-  //         const cookies = await CookieManager.get(BASE_URL_API);
-  //         getMarkers(cookies.authToken.value, params);
-
-  //         if (isActive) {
-  //           console.log('set markers i guesss');
-  //         }
-  //       } catch (e) {
-  //         console.log('Handle error WIP');
-  //       }
-  //     };
-
-  //     fetchUser();
-
-  //     return () => {
-  //       isActive = false;
-  //     };
-  //   }, [params]),
-  // );
-
-  async function getMarkerbyId(id) {
-    const cookies = await CookieManager.get(BASE_URL_API);
-    await Geolocation.getCurrentPosition(
-      position => {
-        console.log('inide geolocation get current before adding marker');
-        const {longitude, latitude} = position.coords;
-        setCurrentPosition({
-          latitude,
-          longitude,
-        });
-      },
-
-      error => alert(error.message),
-      {
-        timeout: 20000,
-        maximumAge: 5000,
-        enableHighAccuracy: true,
-      },
-    );
-    setModalMarker(await getMarker(cookies.authToken.value, id, params));
-  }
 
   async function getMarkersWithMaterial(value, valueChange) {
     console.log('Material: ', value);
@@ -407,7 +333,6 @@ export default function mainMap({route, navigation}) {
       otherPapers: otherPapers,
       paper: paper,
       tetra: tetra,
-      currentPosition: [currentPosition.latitude, currentPosition.longitude],
     };
 
     setParams(query);
@@ -493,6 +418,7 @@ export default function mainMap({route, navigation}) {
       currentPosition: currentPosition,
       user: route.params.user,
       marker: marker ? marker : [],
+      edit: false,
     });
   }
 
@@ -508,7 +434,9 @@ export default function mainMap({route, navigation}) {
     }
   }
 
-  return markers.length >= 0 && currentPosition.latitude != null ? (
+  return markers.length >= 0 &&
+    currentPosition.latitude != null &&
+    permissionGranted == PermissionsAndroid.RESULTS.GRANTED ? (
     <View>
       <MapView
         ref={mapView => {
@@ -670,7 +598,6 @@ export default function mainMap({route, navigation}) {
                     heading: 0,
                   })
                 }
-                title="Agregar sitio"
                 style={styles.button}
                 accessibilityLabel="Learn more about this purple button">
                 <View style={styles.card}>
@@ -684,6 +611,10 @@ export default function mainMap({route, navigation}) {
                   <View style={styles.textContent}>
                     <Text numberOfLines={1} style={styles.cardtitle}>
                       {marker.title}
+                    </Text>
+
+                    <Text numberOfLines={1} style={styles.cardtitle}>
+                      A {marker.distance} metros
                     </Text>
                   </View>
                 </View>

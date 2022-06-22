@@ -11,32 +11,35 @@ export async function registerUser(
   birthDate,
   email,
 ) {
-  try {
-    let req = await axios({
-      method: 'post',
-      url: `${baseUrl}/api/register`,
-      data: {
-        username: username,
-        name: name,
-        // birthDate: birthDate,
-        firebaseUID: firebaseUID,
-        email: email,
-      },
-    }).then(response => {
-      console.log('data: ', response.data);
-      console.log('created???');
-      CookieManager.set(baseUrl, {
-        name: 'authToken',
-        value: response.data.data.token,
-      }).then(done => {
-        console.log('CookieManager.set =>', done);
+  return new Promise(async (resolve, reject) => {
+    try {
+      let req = await axios({
+        method: 'post',
+        url: `${baseUrl}/api/register`,
+        data: {
+          username: username,
+          name: name,
+          // birthDate: birthDate,
+          firebaseUID: firebaseUID,
+          email: email,
+        },
+      }).then(response => {
+        console.log('data: ', response.data);
+        console.log('created???');
+        CookieManager.set(baseUrl, {
+          name: 'authToken',
+          value: response.data.data.token,
+        }).then(done => {
+          console.log('CookieManager.set =>', done);
+          resolve(response);
+        });
       });
-    });
-  } catch (error) {
-    console.log(error.response); // this is the main part. Use the response property from the error object
+    } catch (error) {
+      console.log(error.response); // this is the main part. Use the response property from the error object
 
-    return error.response;
-  }
+      reject(error.response);
+    }
+  });
 }
 
 export async function loginUserBackend(token, id) {
@@ -55,6 +58,11 @@ export async function loginUserBackend(token, id) {
       CookieManager.set(baseUrl, {
         name: 'userId',
         value: id,
+      });
+
+      CookieManager.set(baseUrl, {
+        name: 'permissions',
+        value: JSON.stringify(response.data.permissions),
       });
       CookieManager.set(baseUrl, {
         name: 'authToken',

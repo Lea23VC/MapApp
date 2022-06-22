@@ -187,18 +187,9 @@ export default function App({navigation}) {
 
       <Button
         style={styles.button}
-        icon="login"
-        mode="outlined"
-        onPress={() => {
-          signOut();
-        }}>
-        Cerrar Sesión
-      </Button>
-
-      <Button
-        style={styles.button}
-        icon="login"
-        mode="outlined"
+        icon="map"
+        color="white"
+        mode="contained"
         onPress={() => {
           goToMap();
         }}>
@@ -207,12 +198,24 @@ export default function App({navigation}) {
 
       <Button
         style={styles.button}
-        icon="login"
-        mode="outlined"
+        icon="account"
+        color="white"
+        mode="contained"
         onPress={() => {
           goToProfile();
         }}>
         Ver Perfil
+      </Button>
+
+      <Button
+        style={styles.button}
+        icon="logout"
+        color="white"
+        mode="contained"
+        onPress={() => {
+          signOut();
+        }}>
+        Cerrar Sesión
       </Button>
     </View>
   );
@@ -225,6 +228,9 @@ const styles = StyleSheet.create({
   },
   button: {
     alignSelf: 'center',
+    marginTop: 10,
+
+    width: '50%',
   },
   buttonPadding: {
     paddingTop: 10,

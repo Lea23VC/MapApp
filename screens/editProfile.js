@@ -117,7 +117,7 @@ export default function EditProfile({navigation, route}) {
   return (
     <View style={styles.centeredView}>
       <View style={styles.modalView}>
-        <View style={styles.viewText}>
+        {/* <View style={styles.viewText}>
           <TextInput
             mode="outlined"
             style={styles.input}
@@ -125,7 +125,7 @@ export default function EditProfile({navigation, route}) {
             value={username}
             label="Nombre de usuario"
           />
-        </View>
+        </View> */}
         <View style={{height: 400, alignSelf: 'stretch'}}>
           <ScrollView style={styles.scroll}>
             <View style={{paddingTop: 20}}>

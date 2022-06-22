@@ -6,10 +6,25 @@ import {
   View,
   TouchableOpacity,
 } from 'react-native';
+import {
+  Checkbox,
+  Modal,
+  Portal,
+  Button,
+  ActivityIndicator,
+  Colors,
+  Provider,
+} from 'react-native-paper';
 import React, {useState, setState, useEffect, useCallback} from 'react';
 import {setComment as setCommentAPI} from '../../api/comments';
-export default function inputComment({marker_id, user_id}) {
+export default function inputComment({
+  marker_id,
+  user_id,
+  setUpdatingComments,
+  updateComments,
+}) {
   async function setCommentInMarker() {
+    setUpdatingComments(true);
     const data = {
       user_id: user_id,
       marker_id: parseInt(marker_id),
@@ -17,16 +32,19 @@ export default function inputComment({marker_id, user_id}) {
       votes: 0,
     };
 
-    await setCommentAPI(data);
+    const data_comments = await setCommentAPI(data);
+    setComment('');
+    updateComments(data_comments);
+    setUpdatingComments(false);
   }
 
   const [comment, setComment] = useState('');
   return (
-    <KeyboardAvoidingView behavior="position">
+    <KeyboardAvoidingView behavior="padding">
       <View style={styles.container}>
         {/* Comment input field */}
         <TextInput
-          placeholder="Add a comment..."
+          placeholder="Escribe un comentario"
           keyboardType="twitter" // keyboard with no return button
           autoFocus={true} // focus and show the keyboard
           style={styles.input}
@@ -36,6 +54,7 @@ export default function inputComment({marker_id, user_id}) {
         />
         {/* Post button */}
         <TouchableOpacity
+          accessible={comment != '' ? true : false}
           style={styles.button}
           onPress={() => setCommentInMarker()}>
           {/* Apply inactive style if no input */}

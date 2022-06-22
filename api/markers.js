@@ -109,3 +109,27 @@ export async function updateMarker(id, data) {
     // console.log('a after get Markers: ', a);
   });
 }
+
+export async function getStatuses() {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const cookies = await CookieManager.get(BASE_URL_API);
+
+      let req = await axios({
+        method: 'get',
+        url: `${baseUrl}/api/data/getAllStatus`,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookies.authToken.value,
+        },
+      }).then(response => {
+        console.log('data from api markers: ', response);
+        resolve(response.data.data);
+      });
+    } catch (error) {
+      console.log(error.response); // this is the main part. Use the response property from the error object
+
+      reject(error.response);
+    }
+  });
+}
