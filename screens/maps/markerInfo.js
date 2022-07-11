@@ -8,6 +8,7 @@ import {
   Modal,
   Portal,
   Provider,
+  Switch,
 } from 'react-native-paper';
 import {View, Image, ScrollView, StyleSheet, Pressable} from 'react-native';
 import {updateMarker} from '../../api/markers';
@@ -53,6 +54,13 @@ export default function MarkerModalContent({navigation, route}) {
   const [comments, setComments] = useState(null);
 
   const [dropdownValue, setDropdownValue] = useState(null);
+
+  const [isSwitchOn, setIsSwitchOn] = useState(null);
+
+  const onToggleSwitch = () => {
+    setIsSwitchOn(!isSwitchOn);
+  };
+
   //   const [likes, setLikes] = useState(route.params.marker.likes);
   //   const [dislikes, setDislikes] = useState(route.params.marker.dislikes);
 
@@ -109,6 +117,7 @@ export default function MarkerModalContent({navigation, route}) {
           setDislike(data_maker.voted_marker == -1 ? true : false);
           setDropdownValue(data_maker.status);
           setPermissions(JSON.parse(cookies.permissions.value));
+          setIsSwitchOn(data_maker.availability ? true : false);
         }
       };
 
@@ -150,6 +159,16 @@ export default function MarkerModalContent({navigation, route}) {
     await updateMarker(route.params.marker_id, data);
     setChangingData(false);
     hideModal();
+  }
+
+  async function changeAvailability() {
+    const data = {
+      availability: !isSwitchOn ? 1 : 0,
+    };
+    setIsSwitchOn(!isSwitchOn);
+    setChangingData(true);
+    await updateMarker(route.params.marker_id, data);
+    setChangingData(false);
   }
 
   async function likeMarker(value) {
@@ -275,6 +294,34 @@ export default function MarkerModalContent({navigation, route}) {
           onRequestClose={() => setIsVisible(false)}
         />
         <Text> {marker.created_at} </Text>
+
+        {permissions.some(item => item.id === 3) ? (
+          <View>
+            <View style={styles.buttonOuterLayout}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                }}>
+                <Text style={{fontSize: 20}}>
+                  {isSwitchOn ? 'Disponible' : 'No disponible'}{' '}
+                </Text>
+
+                <Switch
+                  value={isSwitchOn}
+                  onValueChange={() => {
+                    changeAvailability();
+                  }}
+                />
+              </View>
+            </View>
+          </View>
+        ) : (
+          <Text style={{fontWeight: 'bold'}}>
+            {isSwitchOn ? 'Disponible' : 'No disponible'}{' '}
+          </Text>
+        )}
+
         {permissions.some(item => item.id === 1) && (
           <View>
             <Portal>
@@ -403,6 +450,7 @@ const styles = StyleSheet.create({
   },
 
   containerStyle: {
+    padding: 10,
     backgroundColor: 'white',
     margin: 20,
     height: 200,

@@ -123,3 +123,39 @@ export async function updateUser(token, id, data) {
     }
   });
 }
+
+export async function getUsers() {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const cookies = await CookieManager.get(BASE_URL_API);
+
+      let req = await axios({
+        method: 'get',
+        url: `${baseUrl}/api/users`,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + cookies.authToken.value,
+        },
+      }).then(response => {
+        console.log('data from api markers: ', response);
+
+        response.data.sort(function (a, b) {
+          if (a.likes > b.likes) {
+            return -1;
+          }
+          if (a.likes < b.likes) {
+            return 1;
+          }
+          // a must be equal to b
+          return 0;
+        });
+
+        resolve(response.data);
+      });
+    } catch (error) {
+      console.log(error.response); // this is the main part. Use the response property from the error object
+
+      reject(error.response);
+    }
+  });
+}

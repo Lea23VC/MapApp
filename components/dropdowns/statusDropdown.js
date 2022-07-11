@@ -35,7 +35,7 @@ export default function statusDropdown({value, setValue}) {
       maxHeight={300}
       labelField="label"
       valueField="value"
-      placeholder={!value ? 'Seleccionar ' : value.label}
+      placeholder={!value ? 'Selecciona estado ' : value.label}
       value={value}
       onFocus={() => setIsFocus(true)}
       onBlur={() => setIsFocus(false)}
@@ -49,12 +49,13 @@ export default function statusDropdown({value, setValue}) {
 
 const styles = StyleSheet.create({
   dropdown: {
-    width: '80%',
+    width: '100%',
     height: 50,
     borderColor: 'gray',
     borderWidth: 0.5,
     borderRadius: 8,
     paddingHorizontal: 8,
+    backgroundColor: 'white',
   },
 
   placeholderStyle: {

@@ -17,6 +17,8 @@ import EditProfile from './screens/editProfile';
 
 import MarkerInfo from './screens/maps/markerInfo';
 
+import Leaderboard from './screens/leaderboard';
+
 import {LogBox} from 'react-native';
 LogBox.ignoreLogs([
   'Non-serializable values were found in the navigation state',
@@ -62,6 +64,12 @@ export default function App() {
           name="Marker Info"
           component={MarkerInfo}
           options={{title: 'Punto de reciclaje'}}
+        />
+
+        <Stack.Screen
+          name="Leaderboard"
+          component={Leaderboard}
+          options={{title: 'Leaderboard'}}
         />
       </Stack.Navigator>
     </NavigationContainer>

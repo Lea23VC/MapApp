@@ -21,6 +21,7 @@ import {
   Button,
   ActivityIndicator,
   Colors,
+  Switch,
 } from 'react-native-paper';
 import ImagePicker from 'react-native-image-crop-picker';
 
@@ -152,6 +153,13 @@ export default function ModalMap({navigation, route}) {
   const [imagePoint, setImagePoint] = useState(
     route.params.marker.imgURL ? route.params.marker.imgURL : null,
   );
+
+  const [isSwitchOn, setIsSwitchOn] = useState(
+    route.params.marker.availability ? true : false,
+  );
+
+  const onToggleSwitch = () => setIsSwitchOn(!isSwitchOn);
+
   const [uploading, setUploading] = useState(false);
   const [transferred, setTransferred] = useState(0);
   const [addingMarker, setAddingMarker] = useState(false);
@@ -214,6 +222,8 @@ export default function ModalMap({navigation, route}) {
     formData.append('tetra', tetra ? 1 : 0);
     formData.append('status', value.value);
     formData.append('recyclableMaterials', JSON.stringify(recyclableMaterials));
+
+    formData.append('availability', isSwitchOn ? 1 : 0);
 
     if (route.params.edit) {
       await updateMarker(route.params.marker.id, formData);
@@ -288,9 +298,9 @@ export default function ModalMap({navigation, route}) {
   };
 
   return (
-    <View>
+    <View style={{paddingHorizontal: 20}}>
       <View>
-        <View>
+        <View style={{paddingBottom: 20}}>
           <TextInput
             mode="outlined"
             style={styles.input}
@@ -386,7 +396,23 @@ export default function ModalMap({navigation, route}) {
                 setOil(!oil);
               }}
             />
-            <StatusDropdown value={value} setValue={setValue} />
+
+            <View style={{paddingLeft: 10}}>
+              <View style={{paddingVertical: 20}}>
+                <StatusDropdown value={value} setValue={setValue} />
+              </View>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                }}>
+                <Text style={{fontSize: 20}}>
+                  {isSwitchOn ? 'Disponible' : 'No disponible'}{' '}
+                </Text>
+
+                <Switch value={isSwitchOn} onValueChange={onToggleSwitch} />
+              </View>
+            </View>
 
             <View style={{paddingTop: 20}}>
               {imagePoint && (

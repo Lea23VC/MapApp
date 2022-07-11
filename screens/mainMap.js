@@ -460,6 +460,7 @@ export default function mainMap({route, navigation}) {
                 user: route.params.user,
               })
             }
+            pinColor={marker.availability == 1 ? 'green' : 'black'}
             key={i}
             coordinate={{
               latitude: marker.latitude,
@@ -614,7 +615,7 @@ export default function mainMap({route, navigation}) {
                     </Text>
 
                     <Text numberOfLines={1} style={styles.cardtitle}>
-                      A {marker.distance} metros
+                      A {marker.distance} kilometros
                     </Text>
                   </View>
                 </View>

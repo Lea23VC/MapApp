@@ -107,6 +107,10 @@ export default function App({navigation}) {
     navigation.navigate('Profile', {userId: user.uid, userAuth: user.uid});
   }
 
+  async function goToLeaderboard() {
+    navigation.navigate('Leaderboard', {userId: user.uid, userAuth: user.uid});
+  }
+
   useFocusEffect(
     useCallback(() => {
       const subscriber = auth().onAuthStateChanged(onAuthStateChanged);
@@ -150,7 +154,8 @@ export default function App({navigation}) {
             <Button
               style={styles.button}
               icon="login"
-              mode="outlined"
+              color="white"
+              mode="contained"
               onPress={() => {
                 loginUser(email, password);
               }}>
@@ -160,8 +165,9 @@ export default function App({navigation}) {
           <View style={styles.buttonPadding}>
             <Button
               style={styles.button}
-              icon="login"
-              mode="outlined"
+              icon="account"
+              color="white"
+              mode="contained"
               onPress={() =>
                 navigation.navigate('SignUp', {name: 'Jane', auth: auth})
               }>
@@ -209,6 +215,16 @@ export default function App({navigation}) {
 
       <Button
         style={styles.button}
+        icon="trophy"
+        color="white"
+        mode="contained"
+        onPress={() => {
+          goToLeaderboard();
+        }}>
+        Ver Leaderboard
+      </Button>
+      <Button
+        style={styles.button}
         icon="logout"
         color="white"
         mode="contained"
@@ -230,7 +246,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginTop: 10,
 
-    width: '50%',
+    width: '60%',
   },
   buttonPadding: {
     paddingTop: 10,
