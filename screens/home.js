@@ -1,9 +1,13 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
+import {useFocusEffect} from '@react-navigation/native';
+
 import {View, Text, Pressable, StyleSheet} from 'react-native';
 import auth from '@react-native-firebase/auth';
 import {Button, TextInput, HelperText} from 'react-native-paper';
 import ModalCreateUser from '../components/sign_login/modalCreateUser';
 import firestore from '@react-native-firebase/firestore';
+import {loginUserBackend} from '../api/users';
+
 export default function App({navigation}) {
   // Set an initializing state whilst Firebase connects
 
@@ -36,6 +40,7 @@ export default function App({navigation}) {
     if (user) {
       token = await user.getIdToken();
       console.log('token: ', token);
+      await loginUserBackend(token, user.uid);
     }
 
     setUser(user);
@@ -49,7 +54,7 @@ export default function App({navigation}) {
     return false;
   };
 
-  function loginUser(email, password) {
+  async function loginUser(email, password) {
     //Check for the Email TextInput
     if (!email.trim()) {
       alert('Please Enter Email');
@@ -64,10 +69,14 @@ export default function App({navigation}) {
 
     auth()
       .signInWithEmailAndPassword(email, password)
-      .then(users => {
-        console.log(user);
+      .then(async userCredential => {
+        console.log('users: ', userCredential.user);
         console.log('User account created & signed in!');
-        navigation.navigate('Map', {name: 'Jane', user: user});
+        token = await userCredential.user.getIdToken();
+        console.log('token auth: ', token);
+        console.log('user uid: ', userCredential.user.uid);
+        loginUserBackend(token);
+        navigation.navigate('Map', {name: 'Jane', user: userCredential.user});
       })
       .catch(error => {
         if (error.code === 'auth/email-already-in-use') {
@@ -89,19 +98,25 @@ export default function App({navigation}) {
   }
 
   async function goToMap() {
-    const user_data = await firestore().collection('Users').doc(user.uid).get();
-    console.log('user data: ', user_data);
-    navigation.navigate('Map', {name: 'Jane', user: user_data});
+    // const user_data = await firestore().collection('Users').doc(user.uid).get();
+    // console.log('user data: ', user_data);
+    navigation.navigate('Map', {name: 'Jane', user: user});
   }
 
   async function goToProfile() {
-    navigation.navigate('Profile', {userId: user.uid});
+    navigation.navigate('Profile', {userId: user.uid, userAuth: user.uid});
   }
 
-  useEffect(() => {
-    const subscriber = auth().onAuthStateChanged(onAuthStateChanged);
-    return subscriber; // unsubscribe on unmount
-  }, []);
+  async function goToLeaderboard() {
+    navigation.navigate('Leaderboard', {userId: user.uid, userAuth: user.uid});
+  }
+
+  useFocusEffect(
+    useCallback(() => {
+      const subscriber = auth().onAuthStateChanged(onAuthStateChanged);
+      return subscriber; // unsubscribe on unmount
+    }, []),
+  );
 
   if (initializing) return null;
 
@@ -139,7 +154,8 @@ export default function App({navigation}) {
             <Button
               style={styles.button}
               icon="login"
-              mode="outlined"
+              color="white"
+              mode="contained"
               onPress={() => {
                 loginUser(email, password);
               }}>
@@ -149,8 +165,9 @@ export default function App({navigation}) {
           <View style={styles.buttonPadding}>
             <Button
               style={styles.button}
-              icon="login"
-              mode="outlined"
+              icon="account"
+              color="white"
+              mode="contained"
               onPress={() =>
                 navigation.navigate('SignUp', {name: 'Jane', auth: auth})
               }>
@@ -176,18 +193,9 @@ export default function App({navigation}) {
 
       <Button
         style={styles.button}
-        icon="login"
-        mode="outlined"
-        onPress={() => {
-          signOut();
-        }}>
-        Cerrar Sesión
-      </Button>
-
-      <Button
-        style={styles.button}
-        icon="login"
-        mode="outlined"
+        icon="map"
+        color="white"
+        mode="contained"
         onPress={() => {
           goToMap();
         }}>
@@ -196,12 +204,34 @@ export default function App({navigation}) {
 
       <Button
         style={styles.button}
-        icon="login"
-        mode="outlined"
+        icon="account"
+        color="white"
+        mode="contained"
         onPress={() => {
           goToProfile();
         }}>
         Ver Perfil
+      </Button>
+
+      <Button
+        style={styles.button}
+        icon="trophy"
+        color="white"
+        mode="contained"
+        onPress={() => {
+          goToLeaderboard();
+        }}>
+        Ver Leaderboard
+      </Button>
+      <Button
+        style={styles.button}
+        icon="logout"
+        color="white"
+        mode="contained"
+        onPress={() => {
+          signOut();
+        }}>
+        Cerrar Sesión
       </Button>
     </View>
   );
@@ -214,6 +244,9 @@ const styles = StyleSheet.create({
   },
   button: {
     alignSelf: 'center',
+    marginTop: 10,
+
+    width: '60%',
   },
   buttonPadding: {
     paddingTop: 10,

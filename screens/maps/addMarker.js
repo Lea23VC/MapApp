@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useCallback} from 'react';
 import {
   StyleSheet,
   Text,
@@ -9,21 +9,31 @@ import {
   Platform,
   Image,
 } from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
 import {Svg, Image as ImageSvg} from 'react-native-svg';
 import firestore from '@react-native-firebase/firestore';
+import StatusDropdown from '../../components/dropdowns/statusDropdown';
+import {Dropdown} from 'react-native-element-dropdown';
+
 import {
   Checkbox,
   TextInput,
   Button,
   ActivityIndicator,
   Colors,
+  Switch,
 } from 'react-native-paper';
 import ImagePicker from 'react-native-image-crop-picker';
 
 import storage from '@react-native-firebase/storage';
 
-import Geocode from 'react-geocode';
+import {setMarker, updateMarker} from '../../api/markers';
+import Geolocation from 'react-native-geolocation-service';
 
+import Geocode from 'react-geocode';
+import {getCoords} from '../../api/geolocation';
+
+import {getStatuses} from '../../api/markers';
 // set Google Maps Geocoding API for purposes of quota management. Its optional but recommended.
 Geocode.setApiKey('AIzaSyBCvtHhm7gF4jLVoNQtXuCWKL5-JrdtyUg');
 
@@ -46,43 +56,110 @@ Geocode.setLocationType('ROOFTOP');
 Geocode.enableDebug();
 
 export default function ModalMap({navigation, route}) {
-  const [text, onChangeText] = React.useState('Useless Text');
+  const [statuses, setStatuses] = useState([]);
+
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+
+      const fetchStatuses = async () => {
+        const data_status = await getStatuses();
+
+        if (isActive) {
+          setStatuses(data_status);
+        }
+      };
+
+      fetchStatuses();
+      return () => {
+        isActive = false;
+      };
+    }, []),
+  );
+
+  const [value, setValue] = useState(
+    route.params.marker.status ? route.params.marker.status : null,
+  );
+  console.log('params in Addmarker: ', route.params);
   const [name, onChangeName] = React.useState(
     route.params.marker?.title ? route.params.marker.title : null,
   );
 
   const [PET, setPET] = React.useState(
-    route.params.marker.recyclableMaterials?.PET
-      ? route.params.marker.recyclableMaterials.PET
+    route.params.marker.materials?.some(item => item.code === 'PET')
+      ? true
       : false,
   );
   const [PE, setPE] = React.useState(
-    route.params.marker.recyclableMaterials?.PE
-      ? route.params.marker.recyclableMaterials.PE
+    route.params.marker.materials?.some(item => item.code === 'PE')
+      ? true
       : false,
   );
   const [PVC, setPVC] = React.useState(
-    route.params.marker.recyclableMaterials?.PVC
-      ? route.params.marker.recyclableMaterials.PVC
+    route.params.marker.materials?.some(item => item.code === 'PVC')
+      ? true
       : false,
   );
   const [aluminium, setAluminium] = React.useState(
-    route.params.marker.recyclableMaterials?.aluminium
-      ? route.params.marker.recyclableMaterials.aluminium
+    route.params.marker.materials?.some(item => item.code === 'aluminium')
+      ? true
       : false,
   );
-  const [cardboard, setCardboard] = React.useState(false);
-  const [glass, setGlass] = React.useState(false);
-  const [paper, setPaper] = React.useState(false);
-  const [otherPapers, setOtherPapers] = React.useState(false);
-  const [otherPlastics, setOtherPlastics] = React.useState(false);
-  const [tetra, setTetra] = React.useState(false);
-  const [cellphones, setCellphones] = React.useState(false);
-  const [batteries, setBatteries] = React.useState(false);
-  const [oil, setOil] = React.useState(false);
-  const [imagePoint, setImagePoint] = useState(
-    route.params.marker.imgUrl ? route.params.marker.imgUrl : null,
+  const [cardboard, setCardboard] = React.useState(
+    route.params.marker.materials?.some(item => item.code === 'cardboard')
+      ? true
+      : false,
   );
+  const [glass, setGlass] = React.useState(
+    route.params.marker.materials?.some(item => item.code === 'glass')
+      ? true
+      : false,
+  );
+  const [paper, setPaper] = React.useState(
+    route.params.marker.materials?.some(item => item.code === 'paper')
+      ? true
+      : false,
+  );
+  const [otherPapers, setOtherPapers] = React.useState(
+    route.params.marker.materials?.some(item => item.code === 'otherPapers')
+      ? true
+      : false,
+  );
+  const [otherPlastics, setOtherPlastics] = React.useState(
+    route.params.marker.materials?.some(item => item.code === 'otherPlastics')
+      ? true
+      : false,
+  );
+  const [tetra, setTetra] = React.useState(
+    route.params.marker.materials?.some(item => item.code === 'tetra')
+      ? true
+      : false,
+  );
+  const [cellphones, setCellphones] = React.useState(
+    route.params.marker.materials?.some(item => item.code === 'cellphones')
+      ? true
+      : false,
+  );
+  const [batteries, setBatteries] = React.useState(
+    route.params.marker.materials?.some(item => item.code === 'batteries')
+      ? true
+      : false,
+  );
+  const [oil, setOil] = React.useState(
+    route.params.marker.materials?.some(item => item.code === 'oil')
+      ? true
+      : false,
+  );
+  const [imagePoint, setImagePoint] = useState(
+    route.params.marker.imgURL ? route.params.marker.imgURL : null,
+  );
+
+  const [isSwitchOn, setIsSwitchOn] = useState(
+    route.params.marker.availability ? true : false,
+  );
+
+  const onToggleSwitch = () => setIsSwitchOn(!isSwitchOn);
+
   const [uploading, setUploading] = useState(false);
   const [transferred, setTransferred] = useState(0);
   const [addingMarker, setAddingMarker] = useState(false);
@@ -90,118 +167,70 @@ export default function ModalMap({navigation, route}) {
   console.log(route.params);
   async function addMarker() {
     setAddingMarker(true);
-    let imgUrl = await uploadImage();
-    if (!imgUrl) {
+
+    console.log('image point: ', imagePoint);
+    if (!imagePoint) {
       alert('Porfavor, suba una foto');
       setAddingMarker(false);
       return;
     }
-
-    var address = await Geocode.fromLatLng(
-      route.params.currentPosition.latitude,
-      route.params.currentPosition.longitude,
-    ).then(
-      response => {
-        // const address = response.results[0].formatted_address;
-        let city, grandCity, state, country, address_street, address_number;
-        for (
-          let i = 0;
-          i < response.results[0].address_components.length;
-          i++
-        ) {
-          for (
-            let j = 0;
-            j < response.results[0].address_components[i].types.length;
-            j++
-          ) {
-            switch (response.results[0].address_components[i].types[j]) {
-              case 'street_number':
-                address_number =
-                  response.results[0].address_components[i].long_name;
-                break;
-              case 'route':
-                address_street =
-                  response.results[0].address_components[i].long_name;
-                break;
-              case 'locality':
-                city = response.results[0].address_components[i].long_name;
-                break;
-              case 'administrative_area_level_2':
-                grandCity = response.results[0].address_components[i].long_name;
-                break;
-              case 'administrative_area_level_1':
-                state = response.results[0].address_components[i].long_name;
-                break;
-              case 'country':
-                country = response.results[0].address_components[i].long_name;
-                break;
-            }
-          }
-        }
-        console.log(response.results[0].address_components);
-        var address_data = {
-          address_street: address_street,
-          address_number: address_number,
-          commune: city,
-          city: grandCity,
-          state: state,
-          country: country,
-        };
-        console.log('aaaa 56: ', address_data);
-        // setAddress(address_data);
-        return address_data;
-      },
-      error => {
-        console.error(error);
-        return null;
-      },
-    );
-
-    // if (imgUrl == null && userData.userImg) {
-    //   imgUrl = userData.userImg;
-    // }
-
-    console.log(route.params.currentPosition);
-    // console.log('modal console log: ', route.params.currentPosition);
-
-    // console.log(address);
-    var recyclableMaterials = {
-      PET: PET,
-      PE: PE,
-      PVC: PVC,
-      aluminium: aluminium,
-      cardboard: cardboard,
-      glass: glass,
-      paper: paper,
-      otherPapers: otherPapers,
-      otherPlastics: otherPlastics,
-      tetra: tetra,
-      cellphones: cellphones,
-      batteries: batteries,
-      oil: oil,
-    };
-
-    onChangeName(null);
-
-    firestore()
-      .collection('Maps')
-      .add({
-        latlng: route.params.currentPosition,
-        address: address,
-        title: name,
-        createdAt: firestore.FieldValue.serverTimestamp(),
-        recyclableMaterials: recyclableMaterials,
-        user: {
-          uid: route.params.user.data().uid,
-          username: route.params.user.data().username,
-        },
-        imgUrl: imgUrl,
-        votes: 0,
-      })
-      .then(() => {
-        console.log('Map added!');
+    const {coords} = await getCoords();
+    console.log('Coords inside addMarker: ', coords);
+    const formData = new FormData();
+    if (transferred) {
+      formData.append('image', {
+        uri: imagePoint,
+        type: 'image/jpeg',
+        name: imagePoint,
       });
-    // props.setModalVisible(!props.modalVisible);
+    }
+
+    var recyclableMaterials = [
+      {code: 'PET', value: PET},
+      {code: 'PE', value: PE},
+      {code: 'PVC', value: PVC},
+      {code: 'aluminium', value: aluminium},
+      {code: 'cardboard', value: cardboard},
+      {code: 'glass', value: glass},
+      {code: 'paper', value: paper},
+      {code: 'otherPapers', value: otherPapers},
+      {code: 'otherPlastics', value: otherPlastics},
+      {code: 'tetra', value: tetra},
+      {code: 'cellphones', value: cellphones},
+      {code: 'batteries', value: batteries},
+      {code: 'oil', value: oil},
+    ];
+
+    formData.append('userId', route.params.user.uid);
+    formData.append('title', name);
+    if (!route.params.marker.latitude) {
+      formData.append('latitude', coords.latitude);
+      formData.append('longitude', coords.longitude);
+    }
+
+    formData.append('PE', PE ? 1 : 0);
+    formData.append('PET', PET ? 1 : 0);
+    formData.append('PVC', PVC ? 1 : 0);
+    formData.append('aluminium', aluminium ? 1 : 0);
+    formData.append('batteries', batteries ? 1 : 0);
+    formData.append('cellphones', cellphones ? 1 : 0);
+    formData.append('glass', glass ? 1 : 0);
+    formData.append('oil', oil ? 1 : 0);
+    formData.append('otherPapers', otherPapers ? 1 : 0);
+    formData.append('otherPlastics', otherPlastics ? 1 : 0);
+    formData.append('paper', paper ? 1 : 0);
+    formData.append('tetra', tetra ? 1 : 0);
+    formData.append('status', value.value);
+    formData.append('recyclableMaterials', JSON.stringify(recyclableMaterials));
+
+    formData.append('availability', isSwitchOn ? 1 : 0);
+
+    if (route.params.edit) {
+      await updateMarker(route.params.marker.id, formData);
+    } else {
+      await setMarker(formData);
+    }
+
     setPET(false);
     setPE(false);
     setPVC(false);
@@ -234,38 +263,7 @@ export default function ModalMap({navigation, route}) {
     filename = name + Date.now() + '.' + extension;
 
     setUploading(true);
-    setTransferred(0);
-
-    const storageRef = storage().ref(`photos/${filename}`);
-    const task = storageRef.putFile(uploadUri);
-
-    // Set transferred state
-    task.on('state_changed', taskSnapshot => {
-      console.log(
-        `${taskSnapshot.bytesTransferred} transferred out of ${taskSnapshot.totalBytes}`,
-      );
-
-      setTransferred(
-        Math.round(taskSnapshot.bytesTransferred / taskSnapshot.totalBytes) *
-          100,
-      );
-    });
-
-    try {
-      await task;
-      const url = await storageRef.getDownloadURL();
-      setUploading(false);
-      setImagePoint(null);
-
-      // Alert.alert(
-      //   'Image uploaded!',
-      //   'Your image has been uploaded to the Firebase Cloud Storage Successfully!',
-      // );
-      return url;
-    } catch (e) {
-      console.log(e);
-      return null;
-    }
+    setTransferred(true);
   };
 
   const takePhotoFromCamera = () => {
@@ -279,6 +277,7 @@ export default function ModalMap({navigation, route}) {
       const imageUri = Platform.OS === 'ios' ? image.sourceURL : image.path;
       setImagePoint(imageUri);
       console.log(imagePoint);
+      setTransferred(true);
       // this.bs.current.snapTo(1);
     });
   };
@@ -290,7 +289,7 @@ export default function ModalMap({navigation, route}) {
       cropping: true,
       compressImageQuality: 0.7,
     }).then(image => {
-      console.log(image);
+      console.log('console image log: ', image);
       const imageUri = Platform.OS === 'ios' ? image.sourceURL : image.path;
       setImagePoint(imageUri);
       console.log(imagePoint);
@@ -299,9 +298,9 @@ export default function ModalMap({navigation, route}) {
   };
 
   return (
-    <View style={styles.centeredView}>
-      <View style={styles.modalView}>
-        <View style={styles.viewText}>
+    <View style={{paddingHorizontal: 20}}>
+      <View>
+        <View style={{paddingBottom: 20}}>
           <TextInput
             mode="outlined"
             style={styles.input}
@@ -310,8 +309,8 @@ export default function ModalMap({navigation, route}) {
             label="Nombre del punto"
           />
         </View>
-        <View style={{height: 400, alignSelf: 'stretch'}}>
-          <ScrollView style={styles.scroll}>
+        <View style={{height: 500, alignSelf: 'stretch'}}>
+          <ScrollView>
             <Checkbox.Item
               label="PE"
               status={PE ? 'checked' : 'unchecked'}
@@ -398,13 +397,30 @@ export default function ModalMap({navigation, route}) {
               }}
             />
 
+            <View style={{paddingLeft: 10}}>
+              <View style={{paddingVertical: 20}}>
+                <StatusDropdown value={value} setValue={setValue} />
+              </View>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                }}>
+                <Text style={{fontSize: 20}}>
+                  {isSwitchOn ? 'Disponible' : 'No disponible'}{' '}
+                </Text>
+
+                <Switch value={isSwitchOn} onValueChange={onToggleSwitch} />
+              </View>
+            </View>
+
             <View style={{paddingTop: 20}}>
               {imagePoint && (
                 <View style={styles.imageContainer}>
                   <Image
                     style={styles.tinyLogo}
                     source={{
-                      uri: route.params.marker.imgUrl,
+                      uri: imagePoint,
                     }}
                   />
                 </View>
@@ -466,5 +482,39 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     width: 300,
     height: 300,
+  },
+
+  dropdown: {
+    height: 50,
+    borderColor: 'gray',
+    borderWidth: 0.5,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+  },
+  icon: {
+    marginRight: 5,
+  },
+  label: {
+    position: 'absolute',
+    backgroundColor: 'white',
+    left: 22,
+    top: 8,
+    zIndex: 999,
+    paddingHorizontal: 8,
+    fontSize: 14,
+  },
+  placeholderStyle: {
+    fontSize: 16,
+  },
+  selectedTextStyle: {
+    fontSize: 16,
+  },
+  iconStyle: {
+    width: 20,
+    height: 20,
+  },
+  inputSearchStyle: {
+    height: 40,
+    fontSize: 16,
   },
 });

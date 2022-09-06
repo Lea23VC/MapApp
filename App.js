@@ -13,6 +13,11 @@ import addMarker from './screens/maps/addMarker';
 import Home from './screens/home';
 import editMarker from './screens/maps/editMarker';
 import Profile from './screens/profile';
+import EditProfile from './screens/editProfile';
+
+import MarkerInfo from './screens/maps/markerInfo';
+
+import Leaderboard from './screens/leaderboard';
 
 import {LogBox} from 'react-native';
 LogBox.ignoreLogs([
@@ -49,6 +54,22 @@ export default function App() {
           name="Profile"
           component={Profile}
           options={{title: 'Perfil'}}
+        />
+        <Stack.Screen
+          name="Edit Profile"
+          component={EditProfile}
+          options={{title: 'Editar Perfil'}}
+        />
+        <Stack.Screen
+          name="Marker Info"
+          component={MarkerInfo}
+          options={{title: 'Punto de reciclaje'}}
+        />
+
+        <Stack.Screen
+          name="Leaderboard"
+          component={Leaderboard}
+          options={{title: 'Leaderboard'}}
         />
       </Stack.Navigator>
     </NavigationContainer>
